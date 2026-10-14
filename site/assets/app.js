@@ -3,7 +3,7 @@
 
   const CFG = Object.assign({
     brandName: "Quillnote", tagline: "", supabaseUrl: "", supabaseAnonKey: "",
-    aiEnabled: false, googleSignIn: false, contactEmail: "",
+    aiEnabled: false, googleSignIn: false, contactEmail: "", passwordResetEmails: false,
   }, window.QUILLNOTE_CONFIG || {});
   const BRAND = CFG.brandName || "Quillnote";
   const LS_NOTES = "quillnote.notes.v1";
@@ -511,9 +511,14 @@
   }
 
   // Email + password accounts. Modes: signup, signin, forgot (request a reset email), reset (choose a new password).
+  // With passwordResetEmails off, the site never sends email: accounts work straight away and
+  // there is no emailed reset, so the copy asks people to keep their password safe.
+  const NO_RESET_NOTE = CFG.contactEmail
+    ? ` Passwords can't be reset by email, so keep yours somewhere safe. If you're locked out, write to ${CFG.contactEmail}.`
+    : " Passwords can't be reset by email, so keep yours somewhere safe.";
   const AUTH_MODES = {
-    signup: { h: "Create a free account", sub: "Use your email and a password of at least 8 characters. Notes you saved as a guest move into your account automatically.", submit: "Create account", email: true, pw: true, confirm: true, tabs: true },
-    signin: { h: "Sign in", sub: "Notes you saved as a guest on this device move into your account when you sign in.", submit: "Sign in", email: true, pw: true, forgot: true, tabs: true },
+    signup: { h: "Create a free account", sub: "Use your email and a password of at least 8 characters. You can start using your account straight away, and notes you saved as a guest move into it automatically." + (CFG.passwordResetEmails ? "" : NO_RESET_NOTE), submit: "Create account", email: true, pw: true, confirm: true, tabs: true },
+    signin: { h: "Sign in", sub: "Notes you saved as a guest on this device move into your account when you sign in." + (CFG.passwordResetEmails ? "" : NO_RESET_NOTE), submit: "Sign in", email: true, pw: true, forgot: CFG.passwordResetEmails, tabs: true },
     forgot: { h: "Reset your password", sub: "Enter your account email and we'll send you a link to choose a new password.", submit: "Email me a reset link", email: true, back: true },
     reset: { h: "Choose a new password", sub: "Use at least 8 characters.", submit: "Save new password", pw: true, confirm: true },
   };
@@ -552,7 +557,7 @@
   function authErrorCopy(err) {
     const code = (err && err.code) || "", msg = (err && err.message) || "";
     if (code === "invalid_credentials" || /invalid login credentials/i.test(msg)) return "Wrong email or password.";
-    if (code === "email_not_confirmed" || /not confirmed/i.test(msg)) return "Confirm your email first. Open the confirmation link we sent you, then sign in.";
+    if (code === "email_not_confirmed" || /not confirmed/i.test(msg)) return "This account hasn't been confirmed yet. Open the confirmation link sent to your email, then sign in.";
     if (code === "user_already_exists" || /already registered/i.test(msg)) return "An account with this email already exists. Sign in instead.";
     if (code === "weak_password" || /password/i.test(msg) && /weak|short|least/i.test(msg)) return "That password is too easy to guess. Use a longer one with a mix of letters, numbers and symbols.";
     if (code === "same_password") return "That's your current password. Choose a different one.";
@@ -574,7 +579,7 @@
     authMsg("Working…");
     try {
       if (authMode === "signup") {
-        const { data, error } = await sb.auth.signUp({ email, password: pw, options: { emailRedirectTo: redirectTo() } });
+        const { data, error } = await sb.auth.signUp({ email, password: pw });
         if (error) return authMsg(authErrorCopy(error), "warn");
         // With email confirmation on, an existing address comes back as a user with no identities.
         if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
@@ -582,8 +587,9 @@
           return authMsg("An account with this email already exists. Sign in instead.", "warn");
         }
         if (!data.session) {
+          // Only happens if "Confirm email" is switched back on in Supabase.
           setAuthMode("signin"); $("#auth-email").value = email;
-          return authMsg(`Account created. Open the confirmation link we sent to ${email}, then sign in here.`, "ok");
+          return authMsg(`Account created. Open the confirmation link sent to ${email}, then sign in here.`, "ok");
         }
         authMsg("Account created. You're signed in.", "ok");   // onAuthStateChange takes it from here
       } else if (authMode === "signin") {

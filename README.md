@@ -32,11 +32,13 @@ The brand name is a setting: change `brandName` in `site/config.js`. The fallbac
 3. **Auth URLs.** Go to **Authentication → URL Configuration**:
    - **Site URL:** your live address, e.g. `https://vikramtkv.github.io/notepad/` (or your own domain).
    - **Redirect URLs:** add the same address, plus `http://localhost:8080/` if you test locally.
-4. **Email + password settings.** Under **Authentication → Sign In / Providers → Email**:
-   - **Confirm email**: on (the default) means a new account must click a confirmation email before it can sign in. Turn it off to let people sign in right after creating an account, with no email at all. The trade-off is that typo'd or fake addresses get accounts and can't reset their password.
-   - **Minimum password length**: set it to 8 to match the site's form.
-   - **Leaked password protection**, if your plan offers it: turn it on.
-5. **Email sending (before launch).** Password-reset emails, plus confirmation emails if they're on, go through Supabase's built-in sender, which allows only a few emails per hour. Under **Authentication → Emails → SMTP Settings**, connect a provider such as Resend, Postmark or Amazon SES. Edit the **Confirm signup** and **Reset password** templates so they carry your brand name.
+4. **Email + password, no emails sent.** The site is set up so it never sends email. Under **Authentication → Sign In / Providers**:
+   - **Confirm email**: **off**. Accounts can be used the moment they're created.
+   - **Email → Minimum password length**: **8**, matching the site's form.
+   - **Email → Secure password change**: **off**, so signed-in people can change their password without an email check.
+
+   The trade-off: there's no "Forgot password?" by email, so someone who forgets their password can't get back in on their own. The sign-in form tells people this, and shows `contactEmail` if you set it. You can reset a person's password yourself under **Authentication → Users**.
+5. **Turning on password-reset emails later (optional).** Connect an email provider under **Authentication → Emails → SMTP Settings** (Resend, Postmark, Amazon SES…), brand the **Reset password** template, then set `passwordResetEmails: true` in `site/config.js`. That brings back the "Forgot password?" link. Supabase's built-in sender allows only a few emails an hour, so don't rely on it for the public.
 6. **Google sign-in (optional).** Enable Google under **Authentication → Providers**, then set `googleSignIn: true` in `config.js`.
 
 ## 2. Assistant (optional)
@@ -92,7 +94,7 @@ Open http://localhost:8080/. Without Supabase keys in `config.js` the site runs 
 - [ ] `schema.sql` run in the notepad project
 - [ ] `config.js` has the project URL and anon key (never the service_role key)
 - [ ] Site URL and Redirect URLs set in Supabase Auth
-- [ ] Custom SMTP connected and email template branded
+- [ ] Decide on password recovery: keep it email-free (set `contactEmail` for locked-out people), or connect SMTP and set `passwordResetEmails: true`
 - [ ] `contactEmail` set in `config.js` (used for abuse reports and the privacy page)
 - [ ] `privacy.html` reviewed for your situation; add terms of service if you need them
 - [ ] Assistant: `ANTHROPIC_API_KEY` secret set, function deployed, `aiEnabled: true`, spend limit set in the Claude Console

@@ -9,6 +9,7 @@ window.QUILLNOTE_CONFIG = {
   supabaseUrl: "https://wdlazljrsocquyqaivmq.supabase.co", // Supabase project "notepad"
   supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndkbGF6bGpyc29jcXV5cWFpdm1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwMDAzNTIsImV4cCI6MjEwNzU3NjM1Mn0.gnWmL6Dclnv7lhYhOnLUEo7rUj2JrFphLuQUJ8BfFfc",
   aiEnabled: false,      // set true after deploying the "ask" Edge Function
+  passwordResetEmails: false, // set true only after connecting SMTP in Supabase; shows "Forgot password?"
   googleSignIn: false,   // set true after enabling Google under Authentication -> Providers
   contactEmail: "",      // shown on shared notes so readers can report abuse
 };
