@@ -87,6 +87,11 @@
   color-scheme: dark;
 }
 
+/* logo ink: brand navy in light mode, near-white in dark mode (the sparkle stays amber) */
+:root { --logo-ink: #0b1033; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --logo-ink: #f2f3f5; } }
+:root[data-theme="dark"] { --logo-ink: #f2f3f5; }
+
 /* editor text colours and highlights, tuned separately for each theme */
 :root {
   --tc-gray: #6b7280; --tc-red: #c62828; --tc-orange: #b85400; --tc-green: #1b7f3b;
@@ -202,9 +207,10 @@ kbd {
   background: var(--bar); border-bottom: 1px solid var(--hairline);
   -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
 }
-.brand { display: inline-flex; align-items: center; gap: 9px; color: var(--ink); font: 600 1.06rem/1 var(--f-display); letter-spacing: -.02em; padding: 6px 8px 6px 2px; }
+.brand { display: inline-flex; align-items: center; gap: 8px; color: var(--logo-ink); padding: 6px 8px 6px 2px; }
 .brand:hover { text-decoration: none; }
-.brand img { width: 26px; height: 26px; }
+.logo-mark { width: 28px; height: 28px; flex: none; }
+.brand-word { font: 700 1.24rem/1 var(--f-display); letter-spacing: -.04em; text-transform: lowercase; }
 .search-trigger {
   justify-self: center; width: min(460px, 100%); height: 34px; display: flex; align-items: center; gap: 8px;
   padding: 0 8px 0 12px; border-radius: 10px; border: 0; background: var(--fill); color: var(--muted); font-size: .9rem; text-align: left;

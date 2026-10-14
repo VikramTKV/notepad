@@ -1,6 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="8" fill="#2f5be8"/>
-  <path d="M9 6.5h10.5l4.5 4.5v14.5H9z" fill="#ffffff"/>
-  <path d="M19.5 6.5V11H24" fill="#d6e0ff"/>
-  <path d="M12.5 15h8M12.5 18.5h8M12.5 22h5" stroke="#2f5be8" stroke-width="1.6" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56">
+  <style>
+    .ink { stroke: #0b1033; }
+    @media (prefers-color-scheme: dark) { .ink { stroke: #f2f3f5; } }
+  </style>
+  <path class="ink" d="M33.5 6H16A10 10 0 0 0 6 16V40A10 10 0 0 0 16 50H36A10 10 0 0 0 46 40V27" fill="none" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path class="ink" d="M17.5 26H35M17.5 36H30" fill="none" stroke-width="5.6" stroke-linecap="round"/>
+  <path d="M43.5 2.5Q45.2 10.3 53 12Q45.2 13.7 43.5 21.5Q41.8 13.7 34 12Q41.8 10.3 43.5 2.5Z" fill="#f5ac2a"/>
 </svg>
