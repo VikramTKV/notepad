@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quillnote · free online notepad</title>
+<meta name="description" content="A free online notepad. Write plain text, rich text, Markdown or task lists, save without signing up, and share any note by link.">
+<meta property="og:title" content="Quillnote · free online notepad">
+<meta property="og:description" content="Write notes in your browser, keep them in a free account, and share them by link.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#173a63">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="assets/styles.css">
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js" defer></script>
+<script src="assets/app.js" defer></script>
+</head>
+<body>
+<header class="bar">
+  <a class="brand" href="./">
+    <img src="assets/favicon.svg" alt="" width="30" height="30">
+    <span class="brand-name" data-brand>Quillnote</span>
+    <span class="brand-tag" data-tagline>write it down, share it by link</span>
+  </a>
+  <div class="bar-right">
+    <span class="mode-chip" id="mode-chip" data-mode="guest"><span class="dot"></span><span id="mode-text">Guest · saved in this browser</span></span>
+    <button class="bar-btn solid" id="btn-signin" type="button" hidden>Sign in</button>
+    <div class="acct" id="acct" hidden>
+      <button class="bar-btn" id="btn-acct" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="acct-menu">Account ▾</button>
+      <div class="acct-menu" id="acct-menu" hidden>
+        <div><div class="small muted">Signed in as</div><div class="acct-email" id="acct-email"></div></div>
+        <button class="btn" id="btn-signout" type="button">Sign out</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="auth-panel" hidden aria-labelledby="auth-h">
+    <h2 id="auth-h">Create a free account or sign in</h2>
+    <p class="small muted">Enter your email and we'll send you a sign-in link. No password needed. Notes you saved as a guest move into your account automatically.</p>
+    <form class="auth-form" id="auth-form">
+      <input id="auth-email" type="email" required autocomplete="email" placeholder="you@example.com" aria-label="Email address">
+      <button class="btn primary" type="submit" id="auth-send">Email me a link</button>
+    </form>
+    <div id="google-wrap" hidden>
+      <div class="auth-or">or</div>
+      <button class="btn" type="button" id="btn-google">Continue with Google</button>
+    </div>
+    <p class="small" id="auth-msg" role="status"></p>
+    <div><button class="btn ghost" type="button" id="auth-close">Not now</button></div>
+  </section>
+
+  <div id="banners" aria-live="polite"></div>
+
+  <section id="shared-view" hidden aria-labelledby="shared-title">
+    <span class="eyebrow">Shared note · read only</span>
+    <h2 id="shared-title"></h2>
+    <div id="shared-meta" class="muted small"></div>
+    <div id="shared-body"></div>
+    <div class="link-row">
+      <button class="btn primary" id="shared-copy" type="button" hidden>Save a copy to my notes</button>
+      <button class="btn" id="shared-close" type="button">Close</button>
+      <a class="btn ghost" id="shared-report" hidden>Report this note</a>
+    </div>
+  </section>
+
+  <div class="layout">
+    <section class="editor-col" aria-label="Editor">
+      <input id="note-title" type="text" placeholder="Note title" autocomplete="off" maxlength="200">
+
+      <div class="toolbar">
+        <div class="menu-wrap">
+          <button class="btn ghost" id="btn-new" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-new">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>New note ▾</button>
+          <div class="menu" id="menu-new" role="menu" hidden>
+            <button type="button" role="menuitem" data-type="plain"><span class="m-title">Plain text</span><span class="m-sub">A classic notepad page</span></button>
+            <button type="button" role="menuitem" data-type="rich"><span class="m-title">Rich text</span><span class="m-sub">Bold, headings and lists</span></button>
+            <button type="button" role="menuitem" data-type="markdown"><span class="m-title">Markdown</span><span class="m-sub">Write in Markdown, flip to preview</span></button>
+            <button type="button" role="menuitem" data-type="tasks"><span class="m-title">Task list</span><span class="m-sub">Checklist with progress</span></button>
+          </div>
+        </div>
+        <button class="btn ghost" id="btn-import" type="button">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 2v8M5 7l3 3 3-3M3 13h10"/></svg>Import</button>
+        <input type="file" id="file-import" accept=".txt,.md,.markdown,.html,.htm,.docx" hidden>
+        <button class="btn ghost" id="btn-share" type="button" aria-expanded="false" aria-controls="share-panel">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="4" cy="8" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="12" cy="12" r="2"/><path d="M5.8 7l4.4-2M5.8 9l4.4 2"/></svg>Share</button>
+        <div class="menu-wrap">
+          <button class="btn ghost" id="btn-download" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-download">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 10V2M5 5l3-3 3 3M3 13h10"/></svg>Download ▾</button>
+          <div class="menu" id="menu-download" role="menu" hidden></div>
+        </div>
+        <button class="btn ghost" id="btn-ai" type="button" hidden>
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 3h10v7H7l-3 3v-3H3z"/></svg>Assistant</button>
+        <span class="type-chip" id="type-chip">Plain text</span>
+      </div>
+
+      <div id="share-panel" class="panel" hidden></div>
+
+      <div class="editor-shell">
+        <div class="subtools" id="rich-tools" hidden>
+          <button type="button" data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button>
+          <button type="button" data-cmd="italic" title="Italic (Ctrl+I)"><i>I</i></button>
+          <button type="button" data-cmd="underline" title="Underline (Ctrl+U)"><u>U</u></button>
+          <button type="button" data-cmd="formatBlock" data-arg="h2" title="Heading">H</button>
+          <button type="button" data-cmd="formatBlock" data-arg="p" title="Normal text">¶</button>
+          <button type="button" data-cmd="insertUnorderedList" title="Bulleted list">• List</button>
+          <button type="button" data-cmd="insertOrderedList" title="Numbered list">1. List</button>
+          <button type="button" data-cmd="removeFormat" title="Clear formatting">Clear</button>
+        </div>
+        <div class="subtools" id="md-tabs" role="group" aria-label="Markdown view" hidden>
+          <button type="button" data-md="write" aria-pressed="true">Write</button>
+          <button type="button" data-md="preview" aria-pressed="false">Preview</button>
+        </div>
+        <textarea id="ed-plain" placeholder="Start typing. Your note saves as you go." spellcheck="true" aria-label="Note content"></textarea>
+        <div id="ed-rich" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Note content" data-placeholder="Start typing. Select text to format it." hidden></div>
+        <div id="md-preview" class="prose" hidden></div>
+        <div id="ed-tasks" hidden>
+          <form class="task-add" id="task-form">
+            <input id="task-input" type="text" placeholder="Add a task and press Enter" autocomplete="off" aria-label="New task">
+            <button class="btn" type="submit">Add</button>
+          </form>
+          <div class="task-meter"><span id="task-progress">0 of 0 done</span><span class="track"><span class="fill" id="task-fill"></span></span></div>
+          <ul id="task-list"></ul>
+        </div>
+      </div>
+
+      <div class="savebar">
+        <button class="btn primary" id="btn-save" type="button">Save</button>
+        <button class="vis-btn" id="vis-btn" type="button"></button>
+        <span id="status" role="status"></span>
+        <span class="counts" id="counts"></span>
+      </div>
+    </section>
+
+    <aside class="side" id="side" aria-label="Notes and assistant">
+      <div class="tabs" role="tablist">
+        <button role="tab" id="tab-notes" aria-selected="true" aria-controls="pane-notes" type="button">My notes<span class="count-pill" id="note-count">0</span></button>
+        <button role="tab" id="tab-chat" aria-selected="false" aria-controls="pane-chat" type="button" hidden>Assistant</button>
+      </div>
+      <div class="pane" id="pane-notes" role="tabpanel" aria-labelledby="tab-notes">
+        <input class="search" id="search" type="search" placeholder="Search notes" aria-label="Search notes">
+        <div class="sortrow"><span>Sort</span>
+          <button type="button" data-sort="updated" aria-pressed="true">Last edited</button>
+          <button type="button" data-sort="title" aria-pressed="false">Title A–Z</button>
+        </div>
+        <ul id="note-list"></ul>
+      </div>
+      <div class="pane" id="pane-chat" role="tabpanel" aria-labelledby="tab-chat" hidden>
+        <p class="muted small" id="chat-about">The assistant reads the note that's open and answers questions about it.</p>
+        <div class="chips" id="chat-chips">
+          <button type="button">Summarize this note</button>
+          <button type="button">Suggest a better title</button>
+          <button type="button">Proofread it</button>
+          <button type="button">List the next steps</button>
+        </div>
+        <div id="chat-log"></div>
+        <form class="chat-form" id="chat-form">
+          <textarea id="chat-input" placeholder="Ask about this note…" aria-label="Message to the assistant"></textarea>
+          <div class="row">
+            <button class="btn" type="button" id="chat-stop" hidden>Stop</button>
+            <button class="btn primary" type="submit" id="chat-send">Send</button>
+          </div>
+        </form>
+      </div>
+    </aside>
+  </div>
+
+  <section class="howto" aria-labelledby="how-h">
+    <h2 id="how-h">How your notes are kept</h2>
+    <div class="how-grid">
+      <div class="how"><h3>Writing as a guest</h3><p>No sign-up. Notes save in this browser while you type. Clearing this browser's cookies and site data removes them.</p></div>
+      <div class="how"><h3>Your free account</h3><p>Sign in with your email and your notes are private to you and available on every device. Guest notes in this browser move over automatically.</p></div>
+      <div class="how"><h3>Sharing by link</h3><p>Turn on link sharing for any account note. Anyone with the link can read it. Turn it off and the link stops working.</p></div>
+      <div class="how"><h3>Formats in and out</h3><p>Plain text, rich text, Markdown and task lists. Import .txt, .md, .html or .docx. Download as .txt, .md, .html or Word, or print to PDF.</p></div>
+    </div>
+  </section>
+</main>
+<footer class="foot">
+  <span><span data-brand>Quillnote</span> · Ctrl+S saves · notes autosave a moment after you stop typing</span>
+  <a href="privacy.html">Privacy</a>
+</footer>
+<div id="print-area" aria-hidden="true"></div>
+<noscript><p style="padding:16px">This notepad needs JavaScript to run.</p></noscript>
+</body>
+</html>

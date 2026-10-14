@@ -1,0 +1,11 @@
+# Supabase CLI local state and secrets
+supabase/.temp/
+supabase/.branches/
+.env
+.env.*
+*.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
