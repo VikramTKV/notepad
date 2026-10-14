@@ -37,7 +37,7 @@ The brand name is a setting: change `brandName` in `site/config.js`. The fallbac
    - **Email → Minimum password length**: **8**, matching the site's form.
    - **Email → Secure password change**: **off**, so signed-in people can change their password without an email check.
 
-   The trade-off: there's no "Forgot password?" by email, so someone who forgets their password can't get back in on their own. The sign-in form tells people this, and shows `contactEmail` if you set it. You can reset a person's password yourself under **Authentication → Users**.
+   The trade-off: there's no "Forgot password?" by email, so someone who forgets their password can't get back in on their own. The sign-in form tells people this, and shows `contactEmail` if you set it. To help a locked-out person, set a new password for them through Supabase's admin API (`auth.admin.updateUserById` with the service_role key, run from your own computer, never the website) and tell them the new password privately. The dashboard's **Send password recovery** button sends an email, so it won't work while email is off.
 5. **Turning on password-reset emails later (optional).** Connect an email provider under **Authentication → Emails → SMTP Settings** (Resend, Postmark, Amazon SES…), brand the **Reset password** template, then set `passwordResetEmails: true` in `site/config.js`. That brings back the "Forgot password?" link. Supabase's built-in sender allows only a few emails an hour, so don't rely on it for the public.
 6. **Google sign-in (optional).** Enable Google under **Authentication → Providers**, then set `googleSignIn: true` in `config.js`.
 
