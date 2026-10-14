@@ -510,33 +510,101 @@
     renderVis();
   }
 
-  function openAuth() {
+  // Email + password accounts. Modes: signup, signin, forgot (request a reset email), reset (choose a new password).
+  const AUTH_MODES = {
+    signup: { h: "Create a free account", sub: "Use your email and a password of at least 8 characters. Notes you saved as a guest move into your account automatically.", submit: "Create account", email: true, pw: true, confirm: true, tabs: true },
+    signin: { h: "Sign in", sub: "Notes you saved as a guest on this device move into your account when you sign in.", submit: "Sign in", email: true, pw: true, forgot: true, tabs: true },
+    forgot: { h: "Reset your password", sub: "Enter your account email and we'll send you a link to choose a new password.", submit: "Email me a reset link", email: true, back: true },
+    reset: { h: "Choose a new password", sub: "Use at least 8 characters.", submit: "Save new password", pw: true, confirm: true },
+  };
+  let authMode = "signup";
+  function authMsg(text, kind = "") { const m = $("#auth-msg"); m.textContent = text; m.dataset.kind = kind; }
+  function setAuthMode(mode) {
+    const m = AUTH_MODES[mode];
+    authMode = mode;
+    $("#auth-h").textContent = m.h;
+    $("#auth-sub").textContent = m.sub;
+    $("#auth-submit").textContent = m.submit;
+    $("#auth-tabs").hidden = !m.tabs;
+    $$("#auth-tabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    $("#email-wrap").hidden = !m.email;
+    $("#password-wrap").hidden = !m.pw;
+    $("#show-wrap").hidden = !m.pw;
+    $("#confirm-wrap").hidden = !m.confirm;
+    $("#auth-forgot").hidden = !m.forgot;
+    $("#auth-back").hidden = !m.back;
+    $("#google-wrap").hidden = !CFG.googleSignIn || !m.tabs;
+    $("#auth-password").autocomplete = mode === "signin" ? "current-password" : "new-password";
+    $("#auth-password").value = ""; $("#auth-confirm").value = "";
+    authMsg("");
+  }
+  function openAuth(mode) {
     if (!sb) return;
+    setAuthMode(typeof mode === "string" ? mode : "signup");
     const p = $("#auth-panel");
     p.hidden = false;
-    $("#google-wrap").hidden = !CFG.googleSignIn;
-    $("#auth-msg").textContent = "";
     p.scrollIntoView({ behavior: "smooth", block: "start" });
-    $("#auth-email").focus();
+    (authMode === "reset" ? $("#auth-password") : $("#auth-email")).focus();
   }
   function closeAuth() { $("#auth-panel").hidden = true; }
   const redirectTo = () => location.origin + location.pathname;
 
-  async function sendMagicLink(email) {
-    const msg = $("#auth-msg");
-    $("#auth-send").disabled = true;
-    msg.dataset.kind = ""; msg.textContent = "Sending…";
-    const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo() } });
-    $("#auth-send").disabled = false;
-    if (error) {
-      msg.dataset.kind = "warn";
-      msg.textContent = error.status === 429
-        ? "Too many sign-in emails were sent. Wait a few minutes and try again."
-        : "Couldn't send the link. Check the address and try again.";
-      return;
+  function authErrorCopy(err) {
+    const code = (err && err.code) || "", msg = (err && err.message) || "";
+    if (code === "invalid_credentials" || /invalid login credentials/i.test(msg)) return "Wrong email or password.";
+    if (code === "email_not_confirmed" || /not confirmed/i.test(msg)) return "Confirm your email first. Open the confirmation link we sent you, then sign in.";
+    if (code === "user_already_exists" || /already registered/i.test(msg)) return "An account with this email already exists. Sign in instead.";
+    if (code === "weak_password" || /password/i.test(msg) && /weak|short|least/i.test(msg)) return "That password is too easy to guess. Use a longer one with a mix of letters, numbers and symbols.";
+    if (code === "same_password") return "That's your current password. Choose a different one.";
+    if (err && err.status === 429 || /rate limit/i.test(msg)) return "Too many attempts. Wait a few minutes and try again.";
+    if (code === "signup_disabled") return "New accounts are switched off right now.";
+    return "Something went wrong. Check your connection and try again.";
+  }
+
+  async function submitAuth() {
+    const email = $("#auth-email").value.trim(), pw = $("#auth-password").value, confirm = $("#auth-confirm").value;
+    const m = AUTH_MODES[authMode];
+    if (m.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return authMsg("Enter a valid email address.", "warn");
+    if (m.pw && !pw) return authMsg("Enter your password.", "warn");
+    if (m.confirm && pw.length < 8) return authMsg("Use at least 8 characters for your password.", "warn");
+    if (m.confirm && pw !== confirm) return authMsg("The two passwords don't match.", "warn");
+
+    const btn = $("#auth-submit");
+    btn.disabled = true;
+    authMsg("Working…");
+    try {
+      if (authMode === "signup") {
+        const { data, error } = await sb.auth.signUp({ email, password: pw, options: { emailRedirectTo: redirectTo() } });
+        if (error) return authMsg(authErrorCopy(error), "warn");
+        // With email confirmation on, an existing address comes back as a user with no identities.
+        if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+          setAuthMode("signin"); $("#auth-email").value = email;
+          return authMsg("An account with this email already exists. Sign in instead.", "warn");
+        }
+        if (!data.session) {
+          setAuthMode("signin"); $("#auth-email").value = email;
+          return authMsg(`Account created. Open the confirmation link we sent to ${email}, then sign in here.`, "ok");
+        }
+        authMsg("Account created. You're signed in.", "ok");   // onAuthStateChange takes it from here
+      } else if (authMode === "signin") {
+        const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+        if (error) return authMsg(authErrorCopy(error), "warn");
+        authMsg("Signed in.", "ok");
+      } else if (authMode === "forgot") {
+        const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: redirectTo() });
+        if (error) return authMsg(authErrorCopy(error), "warn");
+        authMsg(`If an account exists for ${email}, a reset link is on its way. Open it on this device.`, "ok");
+      } else if (authMode === "reset") {
+        const { error } = await sb.auth.updateUser({ password: pw });
+        if (error) return authMsg(authErrorCopy(error), "warn");
+        closeAuth();
+        setStatus("Password updated.", "ok");
+      }
+    } catch {
+      authMsg("Something went wrong. Check your connection and try again.", "warn");
+    } finally {
+      btn.disabled = false;
     }
-    msg.dataset.kind = "ok";
-    msg.textContent = `Check your inbox. We sent a sign-in link to ${email}. Open it on this device to keep your guest notes.`;
   }
 
   async function enterCloud(user) {
@@ -720,7 +788,7 @@
   async function ask(text) {
     text = text.trim();
     if (!text || S.chatCtl) return;
-    if (S.mode !== "cloud") { openAuth(); return; }
+    if (S.mode !== "cloud") { openAuth("signin"); return; }
     S.chat.push({ role: "user", content: text });
     const reply = { role: "assistant", content: "", pending: true };
     S.chat.push(reply);
@@ -835,9 +903,14 @@
     startNew(n.type || "plain", { title: n.title ? n.title + " (copy)" : "Shared note (copy)", body: n.body, tasks: n.tasks || [] });
   });
 
-  $("#btn-signin").addEventListener("click", openAuth);
+  $("#btn-signin").addEventListener("click", () => openAuth("signin"));
   $("#auth-close").addEventListener("click", closeAuth);
-  $("#auth-form").addEventListener("submit", (e) => { e.preventDefault(); const v = $("#auth-email").value.trim(); if (v) sendMagicLink(v); });
+  $("#auth-form").addEventListener("submit", (e) => { e.preventDefault(); submitAuth(); });
+  $$("#auth-tabs button").forEach(b => b.addEventListener("click", () => { const email = $("#auth-email").value; setAuthMode(b.dataset.mode); $("#auth-email").value = email; }));
+  $("#auth-forgot").addEventListener("click", () => { const email = $("#auth-email").value; setAuthMode("forgot"); $("#auth-email").value = email; $("#auth-email").focus(); });
+  $("#auth-back").addEventListener("click", () => { const email = $("#auth-email").value; setAuthMode("signin"); $("#auth-email").value = email; });
+  $("#auth-show").addEventListener("change", (e) => { const t = e.target.checked ? "text" : "password"; $("#auth-password").type = t; $("#auth-confirm").type = t; });
+  $("#btn-change-pw").addEventListener("click", () => { closeMenus(); openAuth("reset"); });
   $("#btn-google").addEventListener("click", () => sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirectTo() } }));
   $("#btn-acct").addEventListener("click", () => {
     const m = $("#acct-menu"), open = m.hidden;
@@ -864,6 +937,7 @@
     sb.auth.onAuthStateChange((event, session) => {
       // Defer: supabase-js warns against awaiting other calls inside this callback.
       setTimeout(() => {
+        if (event === "PASSWORD_RECOVERY") openAuth("reset");   // arrived from a reset-password email
         const user = session && session.user;
         if (user && (!S.user || S.user.id !== user.id)) enterCloud(user);
         else if (!user && S.mode === "cloud") leaveCloud();

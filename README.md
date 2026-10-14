@@ -1,6 +1,6 @@
 # Quillnote
 
-A free online notepad. Anyone can write without signing up. Guest notes save in the browser. A free account (Supabase Auth, email link) keeps notes in the database, moves guest notes in automatically, and lets people share any note by link.
+A free online notepad. Anyone can write without signing up. Guest notes save in the browser. A free account (Supabase Auth, email + password) keeps notes in the database, moves guest notes in automatically, and lets people share any note by link.
 
 **Features:** plain text, rich text, Markdown with preview, task lists · autosave · search and sort · import .txt/.md/.html/.docx · download .txt/.md/.html/Word, print to PDF · read-only share links · optional writing assistant (Claude) for signed-in users.
 
@@ -32,8 +32,12 @@ The brand name is a setting: change `brandName` in `site/config.js`. The fallbac
 3. **Auth URLs.** Go to **Authentication → URL Configuration**:
    - **Site URL:** your live address, e.g. `https://vikramtkv.github.io/notepad/` (or your own domain).
    - **Redirect URLs:** add the same address, plus `http://localhost:8080/` if you test locally.
-4. **Email sending (before launch).** Supabase's built-in email sender allows only a few sign-in emails per hour. That's fine for testing but not for the public. Under **Authentication → Emails → SMTP Settings**, connect a provider such as Resend, Postmark or Amazon SES. Edit the **Magic Link** template so it carries your brand name.
-5. **Google sign-in (optional).** Enable Google under **Authentication → Providers**, then set `googleSignIn: true` in `config.js`.
+4. **Email + password settings.** Under **Authentication → Sign In / Providers → Email**:
+   - **Confirm email**: on (the default) means a new account must click a confirmation email before it can sign in. Turn it off to let people sign in right after creating an account, with no email at all. The trade-off is that typo'd or fake addresses get accounts and can't reset their password.
+   - **Minimum password length**: set it to 8 to match the site's form.
+   - **Leaked password protection**, if your plan offers it: turn it on.
+5. **Email sending (before launch).** Password-reset emails, plus confirmation emails if they're on, go through Supabase's built-in sender, which allows only a few emails per hour. Under **Authentication → Emails → SMTP Settings**, connect a provider such as Resend, Postmark or Amazon SES. Edit the **Confirm signup** and **Reset password** templates so they carry your brand name.
+6. **Google sign-in (optional).** Enable Google under **Authentication → Providers**, then set `googleSignIn: true` in `config.js`.
 
 ## 2. Assistant (optional)
 

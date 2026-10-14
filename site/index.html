@@ -34,6 +34,7 @@
       <button class="bar-btn" id="btn-acct" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="acct-menu">Account ▾</button>
       <div class="acct-menu" id="acct-menu" hidden>
         <div><div class="small muted">Signed in as</div><div class="acct-email" id="acct-email"></div></div>
+        <button class="btn" id="btn-change-pw" type="button">Change password</button>
         <button class="btn" id="btn-signout" type="button">Sign out</button>
       </div>
     </div>
@@ -42,11 +43,25 @@
 
 <main class="wrap">
   <section id="auth-panel" hidden aria-labelledby="auth-h">
-    <h2 id="auth-h">Create a free account or sign in</h2>
-    <p class="small muted">Enter your email and we'll send you a sign-in link. No password needed. Notes you saved as a guest move into your account automatically.</p>
-    <form class="auth-form" id="auth-form">
-      <input id="auth-email" type="email" required autocomplete="email" placeholder="you@example.com" aria-label="Email address">
-      <button class="btn primary" type="submit" id="auth-send">Email me a link</button>
+    <div class="auth-tabs" id="auth-tabs" role="tablist" aria-label="Account">
+      <button role="tab" type="button" id="auth-tab-signup" data-mode="signup" aria-selected="true">Create account</button>
+      <button role="tab" type="button" id="auth-tab-signin" data-mode="signin" aria-selected="false">Sign in</button>
+    </div>
+    <h2 id="auth-h">Create a free account</h2>
+    <p class="small muted" id="auth-sub"></p>
+    <form class="auth-fields" id="auth-form" novalidate>
+      <label class="field" id="email-wrap"><span>Email</span>
+        <input id="auth-email" type="email" autocomplete="email" placeholder="you@example.com" required></label>
+      <label class="field" id="password-wrap"><span>Password</span>
+        <input id="auth-password" type="password" autocomplete="new-password" minlength="8" required></label>
+      <label class="field" id="confirm-wrap"><span>Confirm password</span>
+        <input id="auth-confirm" type="password" autocomplete="new-password" minlength="8"></label>
+      <label class="show-pw" id="show-wrap"><input type="checkbox" id="auth-show"> Show password</label>
+      <div class="auth-actions">
+        <button class="btn primary" type="submit" id="auth-submit">Create account</button>
+        <button class="btn ghost" type="button" id="auth-forgot">Forgot password?</button>
+        <button class="btn ghost" type="button" id="auth-back">Back to sign in</button>
+      </div>
     </form>
     <div id="google-wrap" hidden>
       <div class="auth-or">or</div>
@@ -175,7 +190,7 @@
     <h2 id="how-h">How your notes are kept</h2>
     <div class="how-grid">
       <div class="how"><h3>Writing as a guest</h3><p>No sign-up. Notes save in this browser while you type. Clearing this browser's cookies and site data removes them.</p></div>
-      <div class="how"><h3>Your free account</h3><p>Sign in with your email and your notes are private to you and available on every device. Guest notes in this browser move over automatically.</p></div>
+      <div class="how"><h3>Your free account</h3><p>Create an account with your email and a password. Your notes are private to you and available on every device. Guest notes in this browser move over automatically.</p></div>
       <div class="how"><h3>Sharing by link</h3><p>Turn on link sharing for any account note. Anyone with the link can read it. Turn it off and the link stops working.</p></div>
       <div class="how"><h3>Formats in and out</h3><p>Plain text, rich text, Markdown and task lists. Import .txt, .md, .html or .docx. Download as .txt, .md, .html or Word, or print to PDF.</p></div>
     </div>

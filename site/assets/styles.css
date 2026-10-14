@@ -110,8 +110,16 @@ a { color: var(--accent); }
 }
 #auth-panel h2 { font-size: 1.2rem; }
 #auth-panel p { margin: 0; }
-.auth-form { display: flex; gap: 8px; flex-wrap: wrap; }
-.auth-form input { flex: 1 1 220px; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+.auth-tabs { display: flex; gap: 4px; padding: 4px; background: var(--surface-2); border-radius: 8px; }
+.auth-tabs button { flex: 1; border: 0; background: transparent; padding: 7px 10px; border-radius: 6px; font-weight: 600; color: var(--muted); }
+.auth-tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.auth-fields { display: grid; gap: 10px; }
+.field { display: grid; gap: 4px; font-weight: 600; font-size: .9rem; }
+.field input { font-weight: 400; font-size: 1rem; width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+.field input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.show-pw { display: flex; align-items: center; gap: 8px; font-size: .88rem; color: var(--muted); cursor: pointer; }
+.show-pw input { width: 16px; height: 16px; accent-color: var(--accent); }
+.auth-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .auth-or { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .85rem; }
 .auth-or::before, .auth-or::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
 #auth-msg[data-kind="ok"] { color: var(--ok); }
