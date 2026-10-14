@@ -1,9 +1,10 @@
-# Quillnote
+# Notelume
 
 A free online notepad. Anyone can write without signing up. Guest notes save in the browser. A free account (Supabase Auth, email + password) keeps notes in the database, moves guest notes in automatically, and lets people share any note by link.
 
 **Features:**
-- Plain text, rich text, Markdown with a live split preview, and checklists, plus starter templates.
+- Rich text by default. The toolbar has undo and redo, paragraph styles, bold, italic, underline and strikethrough, text colour and highlight, lists, checklists, tables, images (compressed on the device), quotes, inline code and links.
+- Plain text, Markdown with a live split preview, and checklist notes, plus starter templates.
 - Autosave, pinned notes, filters (all, pinned, shared), search and sort.
 - Duplicate notes, undo after deleting, and focus mode.
 - Font and size choice: sans, serif or mono.
@@ -18,7 +19,8 @@ A free online notepad. Anyone can write without signing up. Guest notes save in 
 
 ```
 site/                       the website (static files, deployed to GitHub Pages)
-  index.html                app + product page
+  index.html                the notepad app
+  features.html             sales page: features, editor tools, pricing, questions
   config.js                 <- Supabase URL + anon key, brand, contact, legal details
   privacy.html, terms.html  legal pages (filled from config.js)
   manifest.webmanifest, sw.js   installable app + offline support
@@ -81,7 +83,7 @@ Close and reopen the terminal, then from this folder:
 ```bash
 git init -b main
 git add .
-git commit -m "Quillnote: online notepad with Supabase"
+git commit -m "Notelume: online notepad with Supabase"
 git remote add origin https://github.com/VikramTKV/notepad.git
 git push -u origin main
 ```

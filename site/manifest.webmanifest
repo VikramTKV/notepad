@@ -1,6 +1,6 @@
 {
-  "name": "Quillnote",
-  "short_name": "Quillnote",
+  "name": "Notelume",
+  "short_name": "Notelume",
   "description": "A calm, fast notepad that saves as you type and shares by link.",
   "start_url": "./",
   "scope": "./",

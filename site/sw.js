@@ -1,8 +1,8 @@
 // Offline support. Same-origin files are served network-first (so updates appear on the next visit)
 // and fall back to the cache when offline. Requests to Supabase are never intercepted.
-const CACHE = "quillnote-v2";
+const CACHE = "notelume-v3";
 const SHELL = [
-  "./", "index.html", "privacy.html", "terms.html", "config.js", "manifest.webmanifest",
+  "./", "index.html", "features.html", "privacy.html", "terms.html", "config.js", "manifest.webmanifest",
   "assets/styles.css", "assets/app.js", "assets/theme.js", "assets/legal.js", "assets/favicon.svg",
   "assets/icon-192.png", "assets/icon-512.png",
   "assets/fonts/inter-latin-wght-normal.woff2", "assets/fonts/inter-latin-ext-wght-normal.woff2",

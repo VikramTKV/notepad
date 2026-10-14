@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://wdlazljrsocquyqaivmq.supabase.co; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<title>Quillnote · the calm, fast online notepad</title>
-<meta name="description" content="Write in your browser with nothing to install. Quillnote saves as you type, works offline, and turns any note into a private, password-protected or expiring link.">
-<meta property="og:title" content="Quillnote · the calm, fast online notepad">
+<title>Notelume · the calm, fast online notepad</title>
+<meta name="description" content="Write in your browser with nothing to install. Notelume saves as you type, works offline, and turns any note into a private, password-protected or expiring link.">
+<meta property="og:title" content="Notelume · the calm, fast online notepad">
 <meta property="og:description" content="Plain text, rich text, Markdown and checklists. Saves as you type. Share any note by link.">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#f2f3f5" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0d0e11" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Quillnote">
+<meta name="apple-mobile-web-app-title" content="Notelume">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/icon-192.png">
@@ -26,7 +26,7 @@
 <script src="vendor/purify.min.js" defer></script>
 <script src="assets/app.js" defer></script>
 </head>
-<body>
+<body class="app-page">
 <svg class="sprite" width="0" height="0" aria-hidden="true">
   <symbol id="i-sidebar" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M9 4.5v15M5.5 8.5h1.5M5.5 11.5h1.5"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
@@ -66,6 +66,12 @@
   <symbol id="i-quote" viewBox="0 0 24 24"><path d="M5 17.5c0-4 1.2-7 4.5-9M13.5 17.5c0-4 1.2-7 4.5-9"/><path d="M5 17.5h3.5v-3.5H5zM13.5 17.5H17v-3.5h-3.5z"/></symbol>
   <symbol id="i-code" viewBox="0 0 24 24"><path d="M8.5 7.5L4 12l4.5 4.5M15.5 7.5L20 12l-4.5 4.5"/></symbol>
   <symbol id="i-eraser" viewBox="0 0 24 24"><path d="M5 19.5h14M7 15.5l7.5-11 5 3.5L12 19.5H8.5z"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 7.5L5 11.5l4 4"/><path d="M5 11.5h9.5a4.5 4.5 0 0 1 0 9H12"/></symbol>
+  <symbol id="i-redo" viewBox="0 0 24 24"><path d="M15 7.5l4 4-4 4"/><path d="M19 11.5H9.5a4.5 4.5 0 0 0 0 9H12"/></symbol>
+  <symbol id="i-tcolor" viewBox="0 0 24 24"><path d="M7 16L12 4l5 12M8.7 12h6.6"/><rect x="4.5" y="18.5" width="15" height="2.5" rx="1" fill="currentColor" stroke="none" class="swatch-bar"/></symbol>
+  <symbol id="i-marker" viewBox="0 0 24 24"><path d="M14.5 4.5l5 5-7.5 7.5H7v-5z"/><path d="M7 17l-2.5 2.5h5"/></symbol>
+  <symbol id="i-table" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M3.5 14.5h17M9.5 9.5v10M15 9.5v10"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17.5l5-4.5 3.5 3 3-2.5 4.5 4"/></symbol>
   <symbol id="i-offline" viewBox="0 0 24 24"><path d="M3 3l18 18M8.5 8.4A6 6 0 0 0 6.3 12 3.3 3.3 0 0 0 7 18.5h10.5"/><path d="M11.5 4.6a6 6 0 0 1 6.4 5.9 4 4 0 0 1 2.5 6.9"/></symbol>
 </svg>
 
@@ -73,11 +79,13 @@
 
 <header class="topbar">
   <button class="icon-btn" id="btn-library" type="button" aria-label="Show or hide notes" aria-controls="library" aria-expanded="true"><svg class="i"><use href="#i-sidebar"/></svg></button>
-  <a class="brand" href="./" aria-label="Quillnote home"><img src="assets/favicon.svg" alt="" width="26" height="26"><span data-brand>Quillnote</span></a>
+  <a class="brand" href="./" aria-label="Notelume home"><img src="assets/favicon.svg" alt="" width="26" height="26"><span data-brand>Notelume</span></a>
   <button class="search-trigger" id="btn-palette" type="button" aria-haspopup="dialog">
     <svg class="i"><use href="#i-search"/></svg><span>Search notes or type a command</span><kbd id="kbd-k">Ctrl K</kbd>
   </button>
   <div class="top-actions">
+    <a class="top-link" href="features.html">Features</a>
+    <a class="top-link" href="features.html#pricing">Pricing</a>
     <span class="sync-pill" id="sync-pill" data-mode="guest" title=""><span class="dot"></span><span id="sync-text">On this device</span></span>
     <button class="icon-btn" id="btn-theme" type="button" aria-label="Theme: automatic"><svg class="i"><use href="#i-auto" id="theme-icon"/></svg></button>
     <button class="btn btn-primary btn-sm" id="btn-signin" type="button" hidden>Sign in</button>
@@ -121,12 +129,22 @@
     </div>
     <ul class="note-list" id="note-list"></ul>
     <div class="lib-foot" id="lib-foot"></div>
+    <nav class="lib-links" aria-label="Site">
+      <a href="features.html">Features &amp; pricing</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="#" id="foot-keys">Shortcuts</a>
+      <a href="#" id="foot-report" hidden>Report abuse</a>
+    </nav>
   </aside>
 
   <main class="workspace" id="workspace">
     <div class="doc-bar" id="doc-bar">
       <div class="doc-bar-left">
         <div class="fmt" id="rich-tools" role="toolbar" aria-label="Formatting" hidden>
+          <button type="button" data-cmd="undo" title="Undo" aria-label="Undo"><svg class="i"><use href="#i-undo"/></svg></button>
+          <button type="button" data-cmd="redo" title="Redo" aria-label="Redo"><svg class="i"><use href="#i-redo"/></svg></button>
+          <span class="sep"></span>
           <select id="block-style" aria-label="Paragraph style">
             <option value="p">Body</option>
             <option value="h1">Title</option>
@@ -140,12 +158,22 @@
           <button type="button" data-cmd="italic" title="Italic" aria-label="Italic"><i class="ital">I</i></button>
           <button type="button" data-cmd="underline" title="Underline" aria-label="Underline"><u>U</u></button>
           <button type="button" data-cmd="strikeThrough" title="Strikethrough" aria-label="Strikethrough"><s>S</s></button>
+          <button type="button" data-act="color" title="Text colour" aria-label="Text colour" aria-haspopup="true" aria-expanded="false"><svg class="i"><use href="#i-tcolor"/></svg></button>
+          <button type="button" data-act="highlight" title="Highlight" aria-label="Highlight" aria-haspopup="true" aria-expanded="false"><svg class="i"><use href="#i-marker"/></svg></button>
           <span class="sep"></span>
           <button type="button" data-cmd="insertUnorderedList" title="Bulleted list" aria-label="Bulleted list"><svg class="i"><use href="#i-list"/></svg></button>
           <button type="button" data-cmd="insertOrderedList" title="Numbered list" aria-label="Numbered list"><svg class="i"><use href="#i-olist"/></svg></button>
-          <button type="button" data-cmd="link" title="Link" aria-label="Add link"><svg class="i"><use href="#i-link"/></svg></button>
-          <button type="button" data-cmd="removeFormat" title="Clear formatting" aria-label="Clear formatting"><svg class="i"><use href="#i-eraser"/></svg></button>
+          <button type="button" data-act="checks" title="Checklist" aria-label="Checklist"><svg class="i"><use href="#i-checklist"/></svg></button>
+          <span class="sep"></span>
+          <button type="button" data-act="table" title="Insert table" aria-label="Insert table"><svg class="i"><use href="#i-table"/></svg></button>
+          <button type="button" data-act="image" title="Insert image" aria-label="Insert image"><svg class="i"><use href="#i-image"/></svg></button>
+          <button type="button" data-act="quote" title="Quote" aria-label="Quote"><svg class="i"><use href="#i-quote"/></svg></button>
+          <button type="button" data-act="code" title="Inline code" aria-label="Inline code"><svg class="i"><use href="#i-code"/></svg></button>
+          <button type="button" data-act="link" title="Link" aria-label="Add link"><svg class="i"><use href="#i-link"/></svg></button>
+          <span class="sep"></span>
+          <button type="button" data-act="clear" title="Clear formatting" aria-label="Clear formatting"><svg class="i"><use href="#i-eraser"/></svg></button>
         </div>
+        <input type="file" id="image-input" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
         <div class="segmented" id="md-tabs" role="tablist" aria-label="Markdown view" hidden>
           <button type="button" role="tab" data-md="write" aria-selected="true">Write</button>
           <button type="button" role="tab" data-md="split" aria-selected="false">Split</button>
@@ -206,7 +234,7 @@
       <div class="doc-meta" id="doc-meta"></div>
       <div class="editor-area" id="editor-area">
         <textarea id="ed-plain" placeholder="Start writing…" spellcheck="true" aria-label="Note text"></textarea>
-        <div id="ed-rich" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Note text" data-placeholder="Start writing… select text to format it." hidden></div>
+        <div id="ed-rich" class="prose" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Note text" data-placeholder="Start writing… select text to format it." hidden></div>
         <div id="md-preview" class="prose" hidden></div>
         <div id="ed-tasks" hidden>
           <div class="task-meter"><span id="task-progress">0 of 0 done</span><span class="track"><span class="fill" id="task-fill"></span></span><button class="link-btn" id="task-clear" type="button">Clear completed</button></div>
@@ -236,83 +264,6 @@
     </form>
   </aside>
 </div>
-
-<section class="story" aria-labelledby="story-h">
-  <div class="story-inner">
-    <div class="story-hero">
-      <h2 id="story-h">Write first. Everything else can wait.</h2>
-      <p>Quillnote opens straight to a blank page. It keeps every word as you type, works without a connection, and turns any note into a link only the right people can open.</p>
-      <button class="btn btn-primary" type="button" id="story-start">Start a new note</button>
-    </div>
-
-    <div class="feature-grid">
-      <div class="feature"><svg class="i"><use href="#i-checkcircle"/></svg><h3>Saved as you type</h3><p>Every change is kept a moment after you pause. Close the tab mid-sentence and it's still there.</p></div>
-      <div class="feature"><svg class="i"><use href="#i-template"/></svg><h3>Four ways to write</h3><p>Plain text, rich text, Markdown with a live side-by-side preview, and checklists that track your progress.</p></div>
-      <div class="feature"><svg class="i"><use href="#i-lock"/></svg><h3>Share on your terms</h3><p>Turn any note into a read-only link. Lock it with a password, or set it to stop working after an hour, a day or a month.</p></div>
-      <div class="feature"><svg class="i"><use href="#i-cloud"/></svg><h3>On every device</h3><p>Write without an account, then add one in seconds. Notes you wrote as a guest come with you automatically.</p></div>
-      <div class="feature"><svg class="i"><use href="#i-keyboard"/></svg><h3>Made for the keyboard</h3><p>Open any note or action from one command menu. Focus mode hides everything except your words.</p></div>
-      <div class="feature"><svg class="i"><use href="#i-offline"/></svg><h3>Works offline</h3><p>Install it like an app on your phone or computer. It opens instantly and keeps working when the connection drops.</p></div>
-    </div>
-
-    <div class="steps-wrap">
-      <h2>From thought to shared link in three steps</h2>
-      <ol class="steps">
-        <li><h3>Write</h3><p>Type a title and start. Pick plain text, rich text, Markdown, a checklist or a ready-made template.</p></li>
-        <li><h3>Keep it</h3><p>Notes stay in this browser. Create a free account with an email and password to sync them everywhere.</p></li>
-        <li><h3>Share</h3><p>Press Share, switch on the link, and send it. Add a password or an expiry if the note is sensitive.</p></li>
-      </ol>
-    </div>
-
-    <div class="pricing" id="pricing">
-      <h2>Pricing</h2>
-      <div class="plan">
-        <div class="plan-head">
-          <h3>Free</h3>
-          <p class="plan-price"><span>$0</span> no card, no trial, no time limit</p>
-        </div>
-        <ul class="plan-list">
-          <li><svg class="i"><use href="#i-check"/></svg>Unlimited notes on this device, no sign-up</li>
-          <li><svg class="i"><use href="#i-check"/></svg>Free account that syncs across devices</li>
-          <li><svg class="i"><use href="#i-check"/></svg>Plain text, rich text, Markdown and checklists</li>
-          <li><svg class="i"><use href="#i-check"/></svg>Share links with optional password and expiry</li>
-          <li><svg class="i"><use href="#i-check"/></svg>Download as text, Markdown, Word or PDF</li>
-          <li><svg class="i"><use href="#i-check"/></svg>Installable app that works offline</li>
-        </ul>
-        <button class="btn btn-primary" type="button" id="plan-start">Start writing</button>
-      </div>
-    </div>
-
-    <div class="faq">
-      <h2>Questions</h2>
-      <details><summary>Is Quillnote free?</summary><p>Yes. Writing, saving, accounts and sharing are all free.</p></details>
-      <details><summary>Do I need an account?</summary><p>No. Without one, notes are kept in this browser on this device. An account keeps them safe if you clear your browser and lets you open them anywhere.</p></details>
-      <details><summary>Who can read my notes?</summary><p>Only you. Account notes are protected in the database so each person can reach only their own. A note becomes readable by others only when you turn on its share link.</p></details>
-      <details><summary>How do password-protected links work?</summary><p>When you add a password to a shared note, the password is scrambled before it's stored, and readers must type it before the note's contents are sent to them. Turn the link off at any time and it stops working straight away.</p></details>
-      <details><summary>What happens if I forget my password?</summary><p>Quillnote doesn't send emails, so passwords can't be reset by email. Keep yours somewhere safe, such as a password manager.</p></details>
-      <details><summary>Can I use it offline?</summary><p>Yes. Once you've opened Quillnote, it loads without a connection. Guest notes save normally; account notes are held on your device and sent as soon as you're back online.</p></details>
-      <details><summary>Can I get my notes out?</summary><p>Any note downloads as plain text, Markdown, a Word document or a web page, or prints to PDF.</p></details>
-      <details><summary>How do I delete my account?</summary><p>Open the account menu at the top right and choose Delete account. Your account and every note in it are removed for good.</p></details>
-    </div>
-
-    <div class="cta">
-      <h2>Your next idea deserves a better home.</h2>
-      <p>No download. No sign-up. Just a page that's ready when you are.</p>
-      <button class="btn btn-primary" type="button" id="cta-start">Start writing now</button>
-    </div>
-  </div>
-</section>
-
-<footer class="site-foot">
-  <div class="site-foot-inner">
-    <span>© <span id="year"></span> <span data-brand>Quillnote</span></span>
-    <nav aria-label="Footer">
-      <a href="privacy.html">Privacy</a>
-      <a href="terms.html">Terms</a>
-      <a href="#" id="foot-keys">Keyboard shortcuts</a>
-      <a href="#" id="foot-report" hidden>Report abuse</a>
-    </nav>
-  </div>
-</footer>
 
 <!-- dialogs -->
 <dialog id="share-dlg" aria-labelledby="share-h"><div class="dlg" id="share-body"></div></dialog>
@@ -374,6 +325,6 @@
 <div class="toasts" id="toasts" aria-live="polite"></div>
 <input type="file" id="file-import" accept=".txt,.md,.markdown,.html,.htm,.docx" hidden>
 <div id="print-area" aria-hidden="true"></div>
-<noscript><p class="noscript">Quillnote needs JavaScript to run.</p></noscript>
+<noscript><p class="noscript">Notelume needs JavaScript to run.</p></noscript>
 </body>
 </html>

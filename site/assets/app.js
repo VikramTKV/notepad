@@ -1,4 +1,4 @@
-/* Quillnote app.
+/* Notelume app.
    Sections: config & helpers · state · preferences · editor · persistence · note actions ·
    library · menus · sharing · shared view · banners · accounts · import/export · assistant ·
    command menu · shortcuts · toasts · wiring · boot. */
@@ -7,16 +7,18 @@
 
   // ---------- config ----------
   const CFG = Object.assign({
-    brandName: "Quillnote", tagline: "", supabaseUrl: "", supabaseAnonKey: "",
+    brandName: "Notelume", tagline: "", supabaseUrl: "", supabaseAnonKey: "",
     aiEnabled: false, googleSignIn: false, contactEmail: "", passwordResetEmails: false,
-  }, window.QUILLNOTE_CONFIG || {});
-  const BRAND = CFG.brandName || "Quillnote";
+  }, window.NOTELUME_CONFIG || {});
+  const BRAND = CFG.brandName || "Notelume";
   const TYPES = { plain: "Plain text", rich: "Rich text", markdown: "Markdown", tasks: "Checklist" };
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const NOTE_COLUMNS = "id,title,type,body,tasks,pinned,is_public,share_expires_at,share_password_hash,created_at,updated_at";
   const IS_MAC = /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent);
   const MOD = IS_MAC ? "⌘" : "Ctrl";
   const ALT = IS_MAC ? "⌥" : "Alt";
+  // Storage keys keep the original "quillnote." prefix on purpose: renaming them would make
+  // existing visitors lose their guest notes and settings.
   const KEY = {
     notes: "quillnote.notes.v1", theme: "quillnote.theme", font: "quillnote.font", size: "quillnote.size",
     sort: "quillnote.sort", lib: "quillnote.lib", guestNotice: "quillnote.guestNotice",
@@ -66,12 +68,27 @@
   const longDate = (t) => new Date(t).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
 
   // ---------- content helpers ----------
+  // Inline style attributes are dropped before parsing so pasted Word or Docs content doesn't trip
+  // the Content Security Policy while it's being cleaned. DOMPurify still removes anything left over.
+  const STYLE_ATTR = /\sstyle\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi;
   function sanitize(html) {
-    if (window.DOMPurify) return window.DOMPurify.sanitize(String(html || ""), { USE_PROFILES: { html: true }, FORBID_ATTR: ["style"] });
+    if (window.DOMPurify) return window.DOMPurify.sanitize(String(html || "").replace(STYLE_ATTR, ""), { USE_PROFILES: { html: true }, FORBID_ATTR: ["style"] });
     // Fallback if the sanitizer failed to load: keep text only.
     const d = document.createElement("div");
     d.textContent = new DOMParser().parseFromString(String(html || ""), "text/html").body.textContent || "";
     return d.innerHTML;
+  }
+  // Only the editor's own classes and the checklist state survive sanitizing, so pasted or
+  // shared HTML can't borrow the site's styling or smuggle other data attributes.
+  if (window.DOMPurify && window.DOMPurify.addHook) {
+    window.DOMPurify.addHook("uponSanitizeAttribute", (node, data) => {
+      if (data.attrName === "class") {
+        const keep = String(data.attrValue).split(/\s+/).filter(c => /^(tc|hl)-[a-z]+$|^checks$|^nt$/.test(c));
+        if (keep.length) data.attrValue = keep.join(" "); else data.keepAttr = false;
+      } else if (data.attrName.startsWith("data-") && data.attrName !== "data-checked") {
+        data.keepAttr = false;
+      }
+    });
   }
   function mdToHtml(src) {
     if (window.marked && typeof window.marked.parse === "function") {
@@ -280,7 +297,11 @@
 
   function writeLocal(arr) {
     const ok = ls.set(KEY.notes, JSON.stringify(arr.map(localCopy)));
-    if (!ok && !S.storageBlocked) { S.storageBlocked = true; renderBanners(); }
+    if (!ok && !S.storageBlocked) {
+      // A tiny test write tells "storage is full" (big images) apart from "storage is blocked".
+      if (ls.set("quillnote.probe", "1")) ls.del("quillnote.probe");
+      else { S.storageBlocked = true; renderBanners(); }
+    }
     return ok;
   }
   function upsert(arr, n) { const i = arr.findIndex(x => x.id === n.id); if (i >= 0) arr[i] = n; else arr.push(n); }
@@ -298,19 +319,21 @@
   }
 
   async function putNote(n) {
-    if (JSON.stringify(n).length > 480000) throw { code: "too_big" };
+    if (JSON.stringify(n).length > 2900000) throw { code: "too_big" };
     if (S.mode === "cloud") {
       const { error } = await sb.from("notes").upsert(toRow(n));
       if (error) throw error;
-    } else {
-      writeLocal([...S.notes.filter(x => x.id !== n.id), n]);
+    } else if (!writeLocal([...S.notes.filter(x => x.id !== n.id), n])) {
+      throw { code: S.storageBlocked ? "local_blocked" : "local_full" };
     }
     upsert(S.notes, n);
   }
 
   function errCopy(e) {
     const c = e && e.code;
-    if (c === "too_big" || c === "23514") return "This note is too long to save. Split it into two notes.";
+    if (c === "too_big" || c === "23514") return "This note is too big to save. Remove an image or split it into two notes.";
+    if (c === "local_full") return sb ? "This browser's storage is full. Remove some images or notes, or create a free account to keep more." : "This browser's storage is full. Remove some images or notes.";
+    if (c === "local_blocked") return "This browser is blocking storage, so notes can't be kept here.";
     if (e && (e.status === 401 || c === "PGRST301")) return "Your session ended. Sign in again to keep saving.";
     if (!S.online) return "You're offline. Changes are kept on this device and sync when you're back online.";
     return "Couldn't save just now. Your changes are kept on this device; try again in a moment.";
@@ -391,8 +414,14 @@
 
   function welcomeNote() {
     return {
-      type: "plain", title: `Welcome to ${BRAND}`,
-      body: `This is your first note. Change anything you like; it saves itself a moment after you stop typing.\n\nA few things to try:\n- Press ${MOD} K to search your notes and run any command.\n- Use the pencil button above your notes for rich text, Markdown, a checklist or a template.\n- Press Share to send a read-only link, with an optional password or expiry.\n- Choose Aa to switch between sans, serif and mono text, and pick a size.\n\nDelete this note whenever you're ready.`,
+      type: "rich", title: `Welcome to ${BRAND}`,
+      body: `<p>This is your first note. Change anything you like; it <strong>saves itself</strong> a moment after you stop typing.</p>`
+        + `<h2>Try these</h2>`
+        + `<ul class="checks"><li>Select some text and use the toolbar above: <mark class="hl-yellow">highlight</mark>, <span class="tc-blue">colour</span>, lists, tables and images.</li>`
+        + `<li>Press <code>${MOD} K</code> to search your notes and run any command.</li>`
+        + `<li>Press <strong>Share</strong> to send a read-only link, with an optional password or expiry.</li>`
+        + `<li>Choose <strong>Aa</strong> for sans, serif or mono text in three sizes.</li></ul>`
+        + `<p>Tick an item by clicking its circle. Delete this note whenever you're ready.</p>`,
     };
   }
   function openMostRecentOrExample() {
@@ -558,8 +587,8 @@
     const m = $("#menu-new");
     m.textContent = "";
     m.append(menuLabel("Blank"));
-    [["plain", "text", "A clean page"], ["rich", "rich", "Headings, lists and links"], ["markdown", "md", "With live preview"], ["tasks", "checklist", "Tick things off"]]
-      .forEach(([type, ic, sub]) => m.append(menuButton({ icon: ic, label: TYPES[type], sub, kbd: type === "plain" ? `${ALT} N` : "", run: () => startNew(type) })));
+    [["rich", "rich", "Formatting, tables and images"], ["plain", "text", "A clean page, no formatting"], ["markdown", "md", "With live preview"], ["tasks", "checklist", "Tick things off"]]
+      .forEach(([type, ic, sub]) => m.append(menuButton({ icon: ic, label: TYPES[type], sub, kbd: type === "rich" ? `${ALT} N` : "", run: () => startNew(type) })));
     m.append(menuSep(), menuLabel("Templates"));
     TEMPLATES.forEach(t => m.append(menuButton({ icon: t.icon, label: t.label, sub: t.sub, run: () => startTemplate(t) })));
   }
@@ -1059,7 +1088,7 @@
       }
       if (ext === "docx") {
         toast(`Opening ${f.name}…`);
-        if (!window.mammoth) await loadScript(window.QUILLNOTE_VENDOR_MAMMOTH || "vendor/mammoth.browser.min.js");
+        if (!window.mammoth) await loadScript("vendor/mammoth.browser.min.js");
         const out = await window.mammoth.convertToHtml({ arrayBuffer: await f.arrayBuffer() });
         return startNew("rich", { title, body: sanitize(out.value) });
       }
@@ -1162,8 +1191,8 @@
   let palItems = [], palIndex = 0;
   function commandList() {
     const cmds = [
-      { group: "Create", icon: "text", label: "New plain text note", kbd: `${ALT} N`, run: () => startNew("plain") },
-      { group: "Create", icon: "rich", label: "New rich text note", run: () => startNew("rich") },
+      { group: "Create", icon: "rich", label: "New note", sub: "Rich text", kbd: `${ALT} N`, run: () => startNew("rich") },
+      { group: "Create", icon: "text", label: "New plain text note", run: () => startNew("plain") },
       { group: "Create", icon: "md", label: "New Markdown note", run: () => startNew("markdown") },
       { group: "Create", icon: "checklist", label: "New checklist", run: () => startNew("tasks") },
       ...TEMPLATES.map(t => ({ group: "Create", icon: t.icon, label: `Template: ${t.label}`, sub: t.sub, run: () => startTemplate(t) })),
@@ -1178,6 +1207,7 @@
       { group: "General", icon: "moon", label: "Theme: Dark", run: () => setTheme("dark", true) },
       { group: "General", icon: "auto", label: "Theme: Automatic", run: () => setTheme("system", true) },
       { group: "General", icon: "keyboard", label: "Keyboard shortcuts", kbd: `${MOD} /`, run: openKeys },
+      { group: "General", icon: "globe", label: "Features and pricing", run: () => { location.href = "features.html"; } },
     ];
     if (aiAvailable()) cmds.push({ group: "General", icon: "spark", label: "Open the assistant", run: openAssistant });
     if (current()) cmds.push({ group: "This note", icon: "trash", label: "Delete this note", run: () => deleteNote(S.currentId) });
@@ -1310,6 +1340,159 @@
     markDirty();
   }
 
+  // ---------- rich text tools ----------
+  const COLORS = [["default", "Default"], ["gray", "Grey"], ["red", "Red"], ["orange", "Orange"], ["green", "Green"], ["blue", "Blue"], ["purple", "Purple"], ["pink", "Pink"]];
+  const HIGHLIGHTS = [["none", "None"], ["yellow", "Yellow"], ["green", "Green"], ["blue", "Blue"], ["pink", "Pink"], ["purple", "Purple"]];
+  const SENTINEL = "#010203"; // temporary colour, swapped for a theme-aware class straight after
+  let richRange = null;
+  const closestIn = (node, selector) => {
+    const el = node && (node.nodeType === 1 ? node : node.parentElement);
+    const hit = el && el.closest(selector);
+    return hit && edRich.contains(hit) ? hit : null;
+  };
+  function saveRichRange() {
+    const sel = window.getSelection();
+    richRange = sel.rangeCount && edRich.contains(sel.anchorNode) ? sel.getRangeAt(0).cloneRange() : null;
+  }
+  function restoreRichRange() {
+    edRich.focus();
+    if (!richRange) return;
+    const sel = window.getSelection();
+    sel.removeAllRanges(); sel.addRange(richRange);
+  }
+  function unwrap(el) { el.replaceWith(...el.childNodes); }
+  function clearClassesInSelection(prefix) {
+    const sel = window.getSelection();
+    if (!sel.rangeCount) return;
+    $$("[class]", edRich).forEach(el => {
+      if ([...el.classList].some(c => c.startsWith(prefix)) && sel.containsNode(el, true) && (el.tagName === "SPAN" || el.tagName === "MARK")) unwrap(el);
+    });
+  }
+  function applyColor(kind, name) {
+    restoreRichRange();
+    const sel = window.getSelection();
+    if (!sel.rangeCount || sel.isCollapsed) { toast("Select some text first."); return; }
+    const prefix = kind === "color" ? "tc-" : "hl-";
+    clearClassesInSelection(prefix);
+    if (name !== "default" && name !== "none") {
+      document.execCommand("styleWithCSS", false, false);
+      document.execCommand("foreColor", false, SENTINEL);
+      $$(`font[color="${SENTINEL}"]`, edRich).forEach(f => {
+        const el = document.createElement(kind === "color" ? "span" : "mark");
+        el.className = prefix + name;
+        el.append(...f.childNodes);
+        f.replaceWith(el);
+      });
+    }
+    markDirty();
+  }
+  function openSwatches(btn, kind) {
+    const wasOpen = btn.getAttribute("aria-expanded") === "true";
+    closePops();
+    if (wasOpen) return;
+    saveRichRange();
+    const m = document.createElement("div");
+    m.className = "popover swatches"; m.id = "item-menu";
+    m.setAttribute("role", "menu"); m.setAttribute("aria-label", kind === "color" ? "Text colour" : "Highlight");
+    (kind === "color" ? COLORS : HIGHLIGHTS).forEach(([name, label]) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.setAttribute("role", "menuitem"); b.title = label; b.setAttribute("aria-label", label);
+      b.className = "sw";
+      b.innerHTML = kind === "color" ? `<span class="tc-${name}">A</span>` : `<mark class="hl-${name}">A</mark>`;
+      b.addEventListener("mousedown", e => e.preventDefault());
+      b.addEventListener("click", () => { closePops(); applyColor(kind, name); });
+      m.append(b);
+    });
+    document.body.append(m);
+    const r = btn.getBoundingClientRect();
+    m.style.position = "fixed";
+    m.style.top = (r.bottom + 6) + "px";
+    m.style.left = Math.max(8, Math.min(r.left, window.innerWidth - m.offsetWidth - 8)) + "px";
+    btn.setAttribute("aria-expanded", "true");
+  }
+  function toggleChecklist() {
+    edRich.focus();
+    let ul = closestIn(window.getSelection().anchorNode, "ul");
+    if (ul && ul.classList.contains("checks")) { ul.classList.remove("checks"); if (!ul.className) ul.removeAttribute("class"); markDirty(); return; }
+    if (!ul) { document.execCommand("insertUnorderedList"); ul = closestIn(window.getSelection().anchorNode, "ul"); }
+    if (ul) ul.classList.add("checks");
+    markDirty();
+  }
+  function toggleBlock(tag) {
+    edRich.focus();
+    const cur = closestIn(window.getSelection().anchorNode, tag);
+    document.execCommand("formatBlock", false, cur ? "<p>" : `<${tag}>`);
+    markDirty();
+  }
+  function inlineCode() {
+    edRich.focus();
+    const sel = window.getSelection();
+    if (!sel.rangeCount) return;
+    const existing = closestIn(sel.anchorNode, "code");
+    if (existing && !existing.closest("pre")) { unwrap(existing); markDirty(); return; }
+    if (sel.isCollapsed) { toast("Select some text first."); return; }
+    document.execCommand("insertHTML", false, `<code>${esc(sel.toString())}</code>`);
+    markDirty();
+  }
+  function insertTable() {
+    edRich.focus();
+    const row = `<tr>${"<td><br></td>".repeat(3)}</tr>`;
+    document.execCommand("insertHTML", false, `<table class="nt"><thead><tr><th>Column 1</th><th>Column 2</th><th>Column 3</th></tr></thead><tbody>${row}${row}</tbody></table><p><br></p>`);
+    markDirty();
+  }
+  function clearFormatting() {
+    edRich.focus();
+    document.execCommand("removeFormat");
+    clearClassesInSelection("tc-");
+    clearClassesInSelection("hl-");
+    markDirty();
+  }
+  // Images are scaled down and compressed on the device, so notes stay small enough to sync.
+  function shrinkImage(file) {
+    return new Promise((resolve, reject) => {
+      const src = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(src);
+        const scale = Math.min(1, 1400 / Math.max(img.naturalWidth, img.naturalHeight));
+        const c = document.createElement("canvas");
+        c.width = Math.max(1, Math.round(img.naturalWidth * scale));
+        c.height = Math.max(1, Math.round(img.naturalHeight * scale));
+        const ctx = c.getContext("2d");
+        const webp = c.toDataURL("image/webp", .5).startsWith("data:image/webp");
+        if (!webp) { ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height); }
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        let q = .82, out = "";
+        do { out = c.toDataURL(webp ? "image/webp" : "image/jpeg", q); q -= .12; } while (out.length > 450000 && q > .3);
+        if (out.length > 700000) reject(new Error("too large")); else resolve(out);
+      };
+      img.onerror = () => { URL.revokeObjectURL(src); reject(new Error("unreadable")); };
+      img.src = src;
+    });
+  }
+  async function insertImage(file) {
+    if (!file || !/^image\/(png|jpeg|webp|gif)$/.test(file.type)) { toast("Choose a PNG, JPEG, WebP or GIF image.", { kind: "warn" }); return; }
+    if (file.size > 15 * 1024 * 1024) { toast("That image is over 15 MB. Choose a smaller one.", { kind: "warn" }); return; }
+    try {
+      const url = await shrinkImage(file);
+      restoreRichRange();
+      document.execCommand("insertHTML", false, `<img src="${esc(url)}" alt="">`);
+      markDirty();
+    } catch { toast("Couldn't add that image. Try a different one.", { kind: "warn" }); }
+  }
+  function onToolbar(b) {
+    const act = b.dataset.act;
+    if (b.dataset.cmd) { edRich.focus(); document.execCommand(b.dataset.cmd, false, null); markDirty(); return; }
+    if (act === "color" || act === "highlight") return openSwatches(b, act);
+    if (act === "checks") return toggleChecklist();
+    if (act === "table") return insertTable();
+    if (act === "image") { saveRichRange(); $("#image-input").click(); return; }
+    if (act === "quote") return toggleBlock("blockquote");
+    if (act === "code") return inlineCode();
+    if (act === "link") return openLinkDialog();
+    if (act === "clear") return clearFormatting();
+  }
+
   // ---------- wiring ----------
   titleEl.addEventListener("input", () => { markDirty(); if (!$("#assistant").hidden) renderChat(); });
   titleEl.addEventListener("keydown", (e) => {
@@ -1324,15 +1507,45 @@
   });
   edRich.addEventListener("input", markDirty);
   edRich.addEventListener("paste", (e) => {
-    const html = e.clipboardData && e.clipboardData.getData("text/html");
+    const cd = e.clipboardData;
+    const imgFile = cd && Array.from(cd.files || []).find(f => f.type.startsWith("image/"));
+    if (imgFile) { e.preventDefault(); saveRichRange(); insertImage(imgFile); return; }
+    const html = cd && cd.getData("text/html");
     if (html) { e.preventDefault(); document.execCommand("insertHTML", false, sanitize(html)); }
   });
+  // Tick a checklist item by clicking its circle.
+  edRich.addEventListener("click", (e) => {
+    const li = e.target.closest && e.target.closest("ul.checks > li");
+    if (!li || !edRich.contains(li)) return;
+    if (e.clientX - li.getBoundingClientRect().left > 28) return;
+    li.dataset.checked = li.dataset.checked === "true" ? "false" : "true";
+    markDirty();
+  });
+  // Tab moves between table cells; Tab in the last cell adds a row.
+  edRich.addEventListener("keydown", (e) => {
+    if (e.key !== "Tab") return;
+    const cell = closestIn(window.getSelection().anchorNode, "td, th");
+    if (!cell) return;
+    e.preventDefault();
+    const table = cell.closest("table");
+    let cells = $$("th, td", table);
+    let i = cells.indexOf(cell) + (e.shiftKey ? -1 : 1);
+    if (i >= cells.length) {
+      const body = table.tBodies[0] || table;
+      const row = body.insertRow();
+      for (let c = 0; c < table.rows[0].cells.length; c++) row.insertCell().append(document.createElement("br"));
+      cells = $$("th, td", table);
+      markDirty();
+    }
+    const target = cells[Math.max(0, i)];
+    const range = document.createRange();
+    range.selectNodeContents(target); range.collapse(true);
+    const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+  });
+  $("#image-input").addEventListener("change", (e) => { const f = e.target.files[0]; e.target.value = ""; if (f) insertImage(f); });
   $$("#rich-tools button").forEach(b => {
     b.addEventListener("mousedown", e => e.preventDefault());
-    b.addEventListener("click", () => {
-      if (b.dataset.cmd === "link") { openLinkDialog(); return; }
-      edRich.focus(); document.execCommand(b.dataset.cmd, false, null); markDirty();
-    });
+    b.addEventListener("click", () => onToolbar(b));
   });
   $("#block-style").addEventListener("change", (e) => { edRich.focus(); document.execCommand("formatBlock", false, `<${e.target.value}>`); e.target.value = "p"; markDirty(); });
   $$("#md-tabs button").forEach(b => b.addEventListener("click", () => { S.mdView = b.dataset.md; showEditorFor("markdown"); }));
@@ -1404,13 +1617,13 @@
   workspace.addEventListener("drop", (e) => {
     if (!hasFiles(e)) return;
     e.preventDefault(); dragDepth = 0; $("#drop-hint").hidden = true;
-    const f = e.dataTransfer.files[0]; if (f) importFile(f);
+    const f = e.dataTransfer.files[0];
+    if (!f) return;
+    if (f.type.startsWith("image/") && S.type === "rich") { richRange = null; insertImage(f); }
+    else importFile(f);
   });
   workspace.addEventListener("scroll", () => $("#doc-bar").classList.toggle("scrolled", workspace.scrollTop > 4), { passive: true });
 
-  const startFromStory = () => { window.scrollTo({ top: 0, behavior: "smooth" }); startNew("plain"); };
-  ["#story-start", "#plan-start", "#cta-start"].forEach(sel => $(sel).addEventListener("click", startFromStory));
-  $("#year").textContent = new Date().getFullYear();
   if (CFG.contactEmail) {
     const r = $("#foot-report");
     r.href = `mailto:${CFG.contactEmail}?subject=${encodeURIComponent("Abuse report")}`;
@@ -1419,7 +1632,7 @@
   $("#foot-keys").addEventListener("click", (e) => { e.preventDefault(); openKeys(); });
 
   document.addEventListener("click", (e) => {
-    if (!e.target.closest(".menu-wrap") && !e.target.closest("#item-menu") && !e.target.closest(".n-more")) closePops();
+    if (!e.target.closest(".menu-wrap") && !e.target.closest("#item-menu") && !e.target.closest(".n-more") && !e.target.closest(".fmt [aria-haspopup]")) closePops();
   });
   document.addEventListener("keydown", (e) => {
     const mod = IS_MAC ? e.metaKey : e.ctrlKey;
@@ -1429,7 +1642,7 @@
     if (mod && e.shiftKey && k === "f") { e.preventDefault(); setFocus(!document.body.classList.contains("focus")); return; }
     if (mod && e.key === "\\") { e.preventDefault(); setLibrary(!libraryOpen()); return; }
     if (mod && e.key === "/") { e.preventDefault(); openKeys(); return; }
-    if (e.altKey && !mod && e.code === "KeyN") { e.preventDefault(); startNew("plain"); return; }
+    if (e.altKey && !mod && e.code === "KeyN") { e.preventDefault(); startNew("rich"); return; }
     if (e.key === "Escape") {
       if ($$("dialog[open]").length) return;   // the dialog handles its own Escape
       if ($$(".popover:not([hidden])").length || $("#item-menu")) { closePops(); return; }

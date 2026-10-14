@@ -1,4 +1,4 @@
--- Quillnote database schema for the Supabase "notepad" project.
+-- Notelume database schema for the Supabase "notepad" project.
 -- Run once in Supabase Dashboard -> SQL Editor -> New query -> paste -> Run.
 -- Safe to re-run: every statement is idempotent.
 
@@ -17,7 +17,7 @@ create table if not exists public.notes (
   updated_at  timestamptz not null default now(),
   constraint notes_type_check  check (type in ('plain', 'rich', 'markdown', 'tasks')),
   constraint notes_title_size  check (char_length(title) <= 200),
-  constraint notes_body_size   check (octet_length(body) <= 500000),
+  constraint notes_body_size   check (octet_length(body) <= 3000000),  -- room for a few compressed images
   constraint notes_tasks_size  check (tasks is null or octet_length(tasks::text) <= 200000)
 );
 
@@ -106,6 +106,10 @@ grant execute on function public.bump_ai_usage(integer) to authenticated;
 alter table public.notes add column if not exists pinned boolean not null default false;
 alter table public.notes add column if not exists share_expires_at timestamptz;
 alter table public.notes add column if not exists share_password_hash text;
+
+-- Projects created before images were supported had a 500 KB body limit; raise it to 3 MB.
+alter table public.notes drop constraint if exists notes_body_size;
+alter table public.notes add constraint notes_body_size check (octet_length(body) <= 3000000);
 
 create extension if not exists pgcrypto with schema extensions;
 

@@ -3,8 +3,8 @@
 //
 // The anon (public) key is meant to be in browser code; Row Level Security in
 // supabase/schema.sql is what protects the data. NEVER put the service_role key here.
-window.QUILLNOTE_CONFIG = {
-  brandName: "Quillnote",
+window.NOTELUME_CONFIG = {
+  brandName: "Notelume",
   tagline: "write it down, share it by link",
   supabaseUrl: "https://wdlazljrsocquyqaivmq.supabase.co", // Supabase project "notepad"
   supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndkbGF6bGpyc29jcXV5cWFpdm1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwMDAzNTIsImV4cCI6MjEwNzU3NjM1Mn0.gnWmL6Dclnv7lhYhOnLUEo7rUj2JrFphLuQUJ8BfFfc",
