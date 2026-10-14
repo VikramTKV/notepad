@@ -3,204 +3,377 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Quillnote · free online notepad</title>
-<meta name="description" content="A free online notepad. Write plain text, rich text, Markdown or task lists, save without signing up, and share any note by link.">
-<meta property="og:title" content="Quillnote · free online notepad">
-<meta property="og:description" content="Write notes in your browser, keep them in a free account, and share them by link.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://wdlazljrsocquyqaivmq.supabase.co; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Quillnote · the calm, fast online notepad</title>
+<meta name="description" content="Write in your browser with nothing to install. Quillnote saves as you type, works offline, and turns any note into a private, password-protected or expiring link.">
+<meta property="og:title" content="Quillnote · the calm, fast online notepad">
+<meta property="og:description" content="Plain text, rich text, Markdown and checklists. Saves as you type. Share any note by link.">
 <meta property="og:type" content="website">
-<meta name="theme-color" content="#173a63">
+<meta name="theme-color" content="#f2f3f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0e11" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Quillnote">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:wght@400;600;700&display=swap">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<script src="assets/theme.js"></script>
+<link rel="preload" href="assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/styles.css">
 <script src="config.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js" defer></script>
+<script src="vendor/supabase.min.js" defer></script>
+<script src="vendor/marked.min.js" defer></script>
+<script src="vendor/purify.min.js" defer></script>
 <script src="assets/app.js" defer></script>
 </head>
 <body>
-<header class="bar">
-  <a class="brand" href="./">
-    <img src="assets/favicon.svg" alt="" width="30" height="30">
-    <span class="brand-name" data-brand>Quillnote</span>
-    <span class="brand-tag" data-tagline>write it down, share it by link</span>
-  </a>
-  <div class="bar-right">
-    <span class="mode-chip" id="mode-chip" data-mode="guest"><span class="dot"></span><span id="mode-text">Guest · saved in this browser</span></span>
-    <button class="bar-btn solid" id="btn-signin" type="button" hidden>Sign in</button>
-    <div class="acct" id="acct" hidden>
-      <button class="bar-btn" id="btn-acct" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="acct-menu">Account ▾</button>
-      <div class="acct-menu" id="acct-menu" hidden>
-        <div><div class="small muted">Signed in as</div><div class="acct-email" id="acct-email"></div></div>
-        <button class="btn" id="btn-change-pw" type="button">Change password</button>
-        <button class="btn" id="btn-signout" type="button">Sign out</button>
+<svg class="sprite" width="0" height="0" aria-hidden="true">
+  <symbol id="i-sidebar" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M9 4.5v15M5.5 8.5h1.5M5.5 11.5h1.5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-compose" viewBox="0 0 24 24"><path d="M11 4.5H6.5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V13"/><path d="M17.6 3.9a1.9 1.9 0 0 1 2.7 2.7L12 14.9l-3.5.8.8-3.5z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+  <symbol id="i-auto" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17a8.5 8.5 0 0 0 0-17z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3.5v11M8 7.5l4-4 4 4"/><path d="M7 11H6a2 2 0 0 0-2 2v5.5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V13a2 2 0 0 0-2-2h-1"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="18" cy="12" r="1.3" fill="currentColor"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 3.5h6l-1 5.5 3.5 3.5v1.5h-11V12.5L10 9z"/><path d="M12 14v6.5"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4.5 7h15M10 7V4.5h4V7M6.5 7l1 12.5a1.5 1.5 0 0 0 1.5 1.4h6a1.5 1.5 0 0 0 1.5-1.4l1-12.5"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="12" height="12" rx="2.5"/><path d="M15.5 8.5V6a2.5 2.5 0 0 0-2.5-2.5H6A2.5 2.5 0 0 0 3.5 6v7A2.5 2.5 0 0 0 6 15.5h2.5"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M4.5 19.5h15"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4M7.5 8.5L12 4l4.5 4.5M4.5 19.5h15"/></symbol>
+  <symbol id="i-print" viewBox="0 0 24 24"><path d="M7 8V3.5h10V8"/><rect x="3.5" y="8" width="17" height="8.5" rx="2"/><path d="M7 13.5h10v7H7z"/></symbol>
+  <symbol id="i-focus" viewBox="0 0 24 24"><path d="M4 9V5.5A1.5 1.5 0 0 1 5.5 4H9M15 4h3.5A1.5 1.5 0 0 1 20 5.5V9M20 15v3.5a1.5 1.5 0 0 1-1.5 1.5H15M9 20H5.5A1.5 1.5 0 0 1 4 18.5V15"/></symbol>
+  <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M8 14h8"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.6 2.5 14.4 0 17M12 3.5c-2.5 2.6-2.5 14.4 0 17"/></symbol>
+  <symbol id="i-device" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="11" rx="2"/><path d="M8.5 19.5h7M12 16v3.5"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18.5h10.5a4 4 0 0 0 .4-8 6 6 0 0 0-11.6 1.6A3.3 3.3 0 0 0 7 18.5z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-checkcircle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M8.3 12.3l2.6 2.6 4.9-5.3"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r="1" fill="currentColor"/><circle cx="4.5" cy="12" r="1" fill="currentColor"/><circle cx="4.5" cy="17.5" r="1" fill="currentColor"/></symbol>
+  <symbol id="i-olist" viewBox="0 0 24 24"><path d="M10 6.5h10M10 12h10M10 17.5h10M4 5l1.2-.8V9M3.8 14.3a1.2 1.2 0 1 1 2 1l-2 2.2h2.4"/></symbol>
+  <symbol id="i-checklist" viewBox="0 0 24 24"><path d="M3.5 6.5l1.5 1.5 3-3M3.5 13.5l1.5 1.5 3-3"/><path d="M11 7h9.5M11 14h9.5M11 19.5h9.5"/></symbol>
+  <symbol id="i-text" viewBox="0 0 24 24"><path d="M5 6.5V5h14v1.5M12 5v14M9.5 19h5"/></symbol>
+  <symbol id="i-rich" viewBox="0 0 24 24"><path d="M4 18.5L9 5.5h1L15 18.5M5.8 14h7.4"/><path d="M15.5 9.5h5M15.5 13.5h5M17 17.5h3.5"/></symbol>
+  <symbol id="i-md" viewBox="0 0 24 24"><rect x="2.5" y="5.5" width="19" height="13" rx="2.5"/><path d="M6 15V9l2.5 3L11 9v6M15.5 9v6M13.5 13l2 2 2-2"/></symbol>
+  <symbol id="i-template" viewBox="0 0 24 24"><rect x="4" y="3.5" width="16" height="17" rx="2.5"/><path d="M8 8h8M8 12h8M8 16h5"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></symbol>
+  <symbol id="i-quote" viewBox="0 0 24 24"><path d="M5 17.5c0-4 1.2-7 4.5-9M13.5 17.5c0-4 1.2-7 4.5-9"/><path d="M5 17.5h3.5v-3.5H5zM13.5 17.5H17v-3.5h-3.5z"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="M8.5 7.5L4 12l4.5 4.5M15.5 7.5L20 12l-4.5 4.5"/></symbol>
+  <symbol id="i-eraser" viewBox="0 0 24 24"><path d="M5 19.5h14M7 15.5l7.5-11 5 3.5L12 19.5H8.5z"/></symbol>
+  <symbol id="i-offline" viewBox="0 0 24 24"><path d="M3 3l18 18M8.5 8.4A6 6 0 0 0 6.3 12 3.3 3.3 0 0 0 7 18.5h10.5"/><path d="M11.5 4.6a6 6 0 0 1 6.4 5.9 4 4 0 0 1 2.5 6.9"/></symbol>
+</svg>
+
+<a class="skip" href="#note-title">Skip to the editor</a>
+
+<header class="topbar">
+  <button class="icon-btn" id="btn-library" type="button" aria-label="Show or hide notes" aria-controls="library" aria-expanded="true"><svg class="i"><use href="#i-sidebar"/></svg></button>
+  <a class="brand" href="./" aria-label="Quillnote home"><img src="assets/favicon.svg" alt="" width="26" height="26"><span data-brand>Quillnote</span></a>
+  <button class="search-trigger" id="btn-palette" type="button" aria-haspopup="dialog">
+    <svg class="i"><use href="#i-search"/></svg><span>Search notes or type a command</span><kbd id="kbd-k">Ctrl K</kbd>
+  </button>
+  <div class="top-actions">
+    <span class="sync-pill" id="sync-pill" data-mode="guest" title=""><span class="dot"></span><span id="sync-text">On this device</span></span>
+    <button class="icon-btn" id="btn-theme" type="button" aria-label="Theme: automatic"><svg class="i"><use href="#i-auto" id="theme-icon"/></svg></button>
+    <button class="btn btn-primary btn-sm" id="btn-signin" type="button" hidden>Sign in</button>
+    <div class="menu-wrap" id="acct" hidden>
+      <button class="avatar-btn" id="btn-acct" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="acct-menu" aria-label="Account"><span id="avatar-initial">Q</span></button>
+      <div class="popover menu" id="acct-menu" role="menu" hidden>
+        <div class="menu-label">Signed in as<div class="acct-email" id="acct-email"></div></div>
+        <div class="menu-sep"></div>
+        <button type="button" role="menuitem" id="btn-change-pw"><svg class="i"><use href="#i-lock"/></svg><span class="m-main">Change password</span></button>
+        <button type="button" role="menuitem" id="btn-signout"><svg class="i"><use href="#i-user"/></svg><span class="m-main">Sign out</span></button>
+        <div class="menu-sep"></div>
+        <button type="button" role="menuitem" id="btn-delete-acct" class="danger"><svg class="i"><use href="#i-trash"/></svg><span class="m-main">Delete account…</span></button>
       </div>
     </div>
   </div>
 </header>
 
-<main class="wrap">
-  <section id="auth-panel" hidden aria-labelledby="auth-h">
-    <div class="auth-tabs" id="auth-tabs" role="tablist" aria-label="Account">
-      <button role="tab" type="button" id="auth-tab-signup" data-mode="signup" aria-selected="true">Create account</button>
-      <button role="tab" type="button" id="auth-tab-signin" data-mode="signin" aria-selected="false">Sign in</button>
-    </div>
-    <h2 id="auth-h">Create a free account</h2>
-    <p class="small muted" id="auth-sub"></p>
-    <form class="auth-fields" id="auth-form" novalidate>
-      <label class="field" id="email-wrap"><span>Email</span>
-        <input id="auth-email" type="email" autocomplete="email" placeholder="you@example.com" required></label>
-      <label class="field" id="password-wrap"><span>Password</span>
-        <input id="auth-password" type="password" autocomplete="new-password" minlength="8" required></label>
-      <label class="field" id="confirm-wrap"><span>Confirm password</span>
-        <input id="auth-confirm" type="password" autocomplete="new-password" minlength="8"></label>
-      <label class="show-pw" id="show-wrap"><input type="checkbox" id="auth-show"> Show password</label>
-      <div class="auth-actions">
-        <button class="btn primary" type="submit" id="auth-submit">Create account</button>
-        <button class="btn ghost" type="button" id="auth-forgot">Forgot password?</button>
-        <button class="btn ghost" type="button" id="auth-back">Back to sign in</button>
+<div class="app" id="app">
+  <aside class="library" id="library" aria-label="Your notes">
+    <div class="lib-head">
+      <h2>Notes <span class="count" id="note-count">0</span></h2>
+      <div class="menu-wrap">
+        <button class="icon-btn" id="btn-new" type="button" aria-label="New note" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-new" title="New note"><svg class="i"><use href="#i-compose"/></svg></button>
+        <div class="popover menu" id="menu-new" role="menu" hidden></div>
       </div>
-    </form>
-    <div id="google-wrap" hidden>
-      <div class="auth-or">or</div>
-      <button class="btn" type="button" id="btn-google">Continue with Google</button>
     </div>
-    <p class="small" id="auth-msg" role="status"></p>
-    <div><button class="btn ghost" type="button" id="auth-close">Not now</button></div>
-  </section>
-
-  <div id="banners" aria-live="polite"></div>
-
-  <section id="shared-view" hidden aria-labelledby="shared-title">
-    <span class="eyebrow">Shared note · read only</span>
-    <h2 id="shared-title"></h2>
-    <div id="shared-meta" class="muted small"></div>
-    <div id="shared-body"></div>
-    <div class="link-row">
-      <button class="btn primary" id="shared-copy" type="button" hidden>Save a copy to my notes</button>
-      <button class="btn" id="shared-close" type="button">Close</button>
-      <a class="btn ghost" id="shared-report" hidden>Report this note</a>
+    <div class="lib-tools">
+      <label class="lib-search"><svg class="i"><use href="#i-search"/></svg><input id="search" type="search" placeholder="Search" aria-label="Search notes" autocomplete="off"></label>
+      <div class="lib-row">
+        <div class="segmented" role="tablist" aria-label="Show notes" id="filters">
+          <button type="button" role="tab" data-filter="all" aria-selected="true">All</button>
+          <button type="button" role="tab" data-filter="pinned" aria-selected="false">Pinned</button>
+          <button type="button" role="tab" data-filter="shared" aria-selected="false">Shared</button>
+        </div>
+        <select class="sort-select" id="sort" aria-label="Sort notes">
+          <option value="updated">Edited</option>
+          <option value="created">Created</option>
+          <option value="title">Title</option>
+        </select>
+      </div>
     </div>
-  </section>
+    <ul class="note-list" id="note-list"></ul>
+    <div class="lib-foot" id="lib-foot"></div>
+  </aside>
 
-  <div class="layout">
-    <section class="editor-col" aria-label="Editor">
-      <input id="note-title" type="text" placeholder="Note title" autocomplete="off" maxlength="200">
-
-      <div class="toolbar">
+  <main class="workspace" id="workspace">
+    <div class="doc-bar" id="doc-bar">
+      <div class="doc-bar-left">
+        <div class="fmt" id="rich-tools" role="toolbar" aria-label="Formatting" hidden>
+          <select id="block-style" aria-label="Paragraph style">
+            <option value="p">Body</option>
+            <option value="h1">Title</option>
+            <option value="h2">Heading</option>
+            <option value="h3">Subheading</option>
+            <option value="blockquote">Quote</option>
+            <option value="pre">Code block</option>
+          </select>
+          <span class="sep"></span>
+          <button type="button" data-cmd="bold" title="Bold" aria-label="Bold"><b>B</b></button>
+          <button type="button" data-cmd="italic" title="Italic" aria-label="Italic"><i class="ital">I</i></button>
+          <button type="button" data-cmd="underline" title="Underline" aria-label="Underline"><u>U</u></button>
+          <button type="button" data-cmd="strikeThrough" title="Strikethrough" aria-label="Strikethrough"><s>S</s></button>
+          <span class="sep"></span>
+          <button type="button" data-cmd="insertUnorderedList" title="Bulleted list" aria-label="Bulleted list"><svg class="i"><use href="#i-list"/></svg></button>
+          <button type="button" data-cmd="insertOrderedList" title="Numbered list" aria-label="Numbered list"><svg class="i"><use href="#i-olist"/></svg></button>
+          <button type="button" data-cmd="link" title="Link" aria-label="Add link"><svg class="i"><use href="#i-link"/></svg></button>
+          <button type="button" data-cmd="removeFormat" title="Clear formatting" aria-label="Clear formatting"><svg class="i"><use href="#i-eraser"/></svg></button>
+        </div>
+        <div class="segmented" id="md-tabs" role="tablist" aria-label="Markdown view" hidden>
+          <button type="button" role="tab" data-md="write" aria-selected="true">Write</button>
+          <button type="button" role="tab" data-md="split" aria-selected="false">Split</button>
+          <button type="button" role="tab" data-md="preview" aria-selected="false">Preview</button>
+        </div>
+      </div>
+      <div class="doc-bar-right">
+        <span class="save-state" id="save-state" role="status"></span>
         <div class="menu-wrap">
-          <button class="btn ghost" id="btn-new" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-new">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>New note ▾</button>
-          <div class="menu" id="menu-new" role="menu" hidden>
-            <button type="button" role="menuitem" data-type="plain"><span class="m-title">Plain text</span><span class="m-sub">A classic notepad page</span></button>
-            <button type="button" role="menuitem" data-type="rich"><span class="m-title">Rich text</span><span class="m-sub">Bold, headings and lists</span></button>
-            <button type="button" role="menuitem" data-type="markdown"><span class="m-title">Markdown</span><span class="m-sub">Write in Markdown, flip to preview</span></button>
-            <button type="button" role="menuitem" data-type="tasks"><span class="m-title">Task list</span><span class="m-sub">Checklist with progress</span></button>
+          <button class="icon-btn typo-btn" id="btn-typo" type="button" aria-label="Text style" aria-haspopup="true" aria-expanded="false" aria-controls="typo-pop" title="Text style">Aa</button>
+          <div class="popover type-pop" id="typo-pop" hidden>
+            <div class="row"><span>Font</span>
+              <div class="segmented" id="pref-font">
+                <button type="button" data-v="sans" aria-pressed="true">Sans</button>
+                <button type="button" data-v="serif" aria-pressed="false" class="f-serif">Serif</button>
+                <button type="button" data-v="mono" aria-pressed="false" class="f-mono">Mono</button>
+              </div>
+            </div>
+            <div class="row"><span>Size</span>
+              <div class="segmented" id="pref-size">
+                <button type="button" data-v="s" aria-pressed="false">Small</button>
+                <button type="button" data-v="m" aria-pressed="true">Medium</button>
+                <button type="button" data-v="l" aria-pressed="false">Large</button>
+              </div>
+            </div>
           </div>
         </div>
-        <button class="btn ghost" id="btn-import" type="button">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 2v8M5 7l3 3 3-3M3 13h10"/></svg>Import</button>
-        <input type="file" id="file-import" accept=".txt,.md,.markdown,.html,.htm,.docx" hidden>
-        <button class="btn ghost" id="btn-share" type="button" aria-expanded="false" aria-controls="share-panel">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="4" cy="8" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="12" cy="12" r="2"/><path d="M5.8 7l4.4-2M5.8 9l4.4 2"/></svg>Share</button>
+        <button class="btn btn-primary btn-sm" id="btn-share" type="button"><svg class="i i-sm"><use href="#i-share"/></svg>Share</button>
         <div class="menu-wrap">
-          <button class="btn ghost" id="btn-download" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-download">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 10V2M5 5l3-3 3 3M3 13h10"/></svg>Download ▾</button>
-          <div class="menu" id="menu-download" role="menu" hidden></div>
+          <button class="icon-btn" id="btn-more" type="button" aria-label="More actions" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-more"><svg class="i"><use href="#i-more"/></svg></button>
+          <div class="popover menu" id="menu-more" role="menu" hidden></div>
         </div>
-        <button class="btn ghost" id="btn-ai" type="button" hidden>
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 3h10v7H7l-3 3v-3H3z"/></svg>Assistant</button>
-        <span class="type-chip" id="type-chip">Plain text</span>
+        <button class="btn btn-sm exit-focus" id="btn-exit-focus" type="button">Exit focus</button>
       </div>
+    </div>
 
-      <div id="share-panel" class="panel" hidden></div>
+    <div id="banners" aria-live="polite"></div>
 
-      <div class="editor-shell">
-        <div class="subtools" id="rich-tools" hidden>
-          <button type="button" data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button>
-          <button type="button" data-cmd="italic" title="Italic (Ctrl+I)"><i>I</i></button>
-          <button type="button" data-cmd="underline" title="Underline (Ctrl+U)"><u>U</u></button>
-          <button type="button" data-cmd="formatBlock" data-arg="h2" title="Heading">H</button>
-          <button type="button" data-cmd="formatBlock" data-arg="p" title="Normal text">¶</button>
-          <button type="button" data-cmd="insertUnorderedList" title="Bulleted list">• List</button>
-          <button type="button" data-cmd="insertOrderedList" title="Numbered list">1. List</button>
-          <button type="button" data-cmd="removeFormat" title="Clear formatting">Clear</button>
-        </div>
-        <div class="subtools" id="md-tabs" role="group" aria-label="Markdown view" hidden>
-          <button type="button" data-md="write" aria-pressed="true">Write</button>
-          <button type="button" data-md="preview" aria-pressed="false">Preview</button>
-        </div>
-        <textarea id="ed-plain" placeholder="Start typing. Your note saves as you go." spellcheck="true" aria-label="Note content"></textarea>
-        <div id="ed-rich" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Note content" data-placeholder="Start typing. Select text to format it." hidden></div>
-        <div id="md-preview" class="prose" hidden></div>
-        <div id="ed-tasks" hidden>
-          <form class="task-add" id="task-form">
-            <input id="task-input" type="text" placeholder="Add a task and press Enter" autocomplete="off" aria-label="New task">
-            <button class="btn" type="submit">Add</button>
-          </form>
-          <div class="task-meter"><span id="task-progress">0 of 0 done</span><span class="track"><span class="fill" id="task-fill"></span></span></div>
-          <ul id="task-list"></ul>
-        </div>
-      </div>
-
-      <div class="savebar">
-        <button class="btn primary" id="btn-save" type="button">Save</button>
-        <button class="vis-btn" id="vis-btn" type="button"></button>
-        <span id="status" role="status"></span>
-        <span class="counts" id="counts"></span>
+    <section class="shared" id="shared-view" hidden aria-labelledby="shared-title">
+      <span class="eyebrow" id="shared-eyebrow"><svg class="i"><use href="#i-globe"/></svg>Shared note · read only</span>
+      <h2 id="shared-title"></h2>
+      <div class="shared-meta" id="shared-meta"></div>
+      <form class="unlock" id="unlock-form" hidden>
+        <input class="input" id="unlock-pw" type="password" placeholder="Password" autocomplete="off" aria-label="Note password">
+        <button class="btn btn-primary" type="submit">Open note</button>
+      </form>
+      <p class="dlg-msg" id="unlock-msg" role="status"></p>
+      <div class="shared-body" id="shared-body"></div>
+      <div class="shared-actions">
+        <button class="btn btn-primary" id="shared-copy" type="button" hidden>Save a copy to my notes</button>
+        <button class="btn" id="shared-close" type="button">Back to my notes</button>
+        <a class="btn btn-plain" id="shared-report" hidden>Report this note</a>
       </div>
     </section>
 
-    <aside class="side" id="side" aria-label="Notes and assistant">
-      <div class="tabs" role="tablist">
-        <button role="tab" id="tab-notes" aria-selected="true" aria-controls="pane-notes" type="button">My notes<span class="count-pill" id="note-count">0</span></button>
-        <button role="tab" id="tab-chat" aria-selected="false" aria-controls="pane-chat" type="button" hidden>Assistant</button>
-      </div>
-      <div class="pane" id="pane-notes" role="tabpanel" aria-labelledby="tab-notes">
-        <input class="search" id="search" type="search" placeholder="Search notes" aria-label="Search notes">
-        <div class="sortrow"><span>Sort</span>
-          <button type="button" data-sort="updated" aria-pressed="true">Last edited</button>
-          <button type="button" data-sort="title" aria-pressed="false">Title A–Z</button>
+    <article class="paper" id="paper" data-font="sans" data-size="m">
+      <input id="note-title" class="doc-title" type="text" placeholder="Untitled" autocomplete="off" maxlength="200" aria-label="Note title">
+      <div class="doc-meta" id="doc-meta"></div>
+      <div class="editor-area" id="editor-area">
+        <textarea id="ed-plain" placeholder="Start writing…" spellcheck="true" aria-label="Note text"></textarea>
+        <div id="ed-rich" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Note text" data-placeholder="Start writing… select text to format it." hidden></div>
+        <div id="md-preview" class="prose" hidden></div>
+        <div id="ed-tasks" hidden>
+          <div class="task-meter"><span id="task-progress">0 of 0 done</span><span class="track"><span class="fill" id="task-fill"></span></span><button class="link-btn" id="task-clear" type="button">Clear completed</button></div>
+          <ul id="task-list"></ul>
+          <form class="task-add" id="task-form"><span class="ring" aria-hidden="true"></span><input id="task-input" type="text" placeholder="Add a task" autocomplete="off" aria-label="New task"></form>
         </div>
-        <ul id="note-list"></ul>
       </div>
-      <div class="pane" id="pane-chat" role="tabpanel" aria-labelledby="tab-chat" hidden>
-        <p class="muted small" id="chat-about">The assistant reads the note that's open and answers questions about it.</p>
-        <div class="chips" id="chat-chips">
-          <button type="button">Summarize this note</button>
-          <button type="button">Suggest a better title</button>
-          <button type="button">Proofread it</button>
-          <button type="button">List the next steps</button>
-        </div>
-        <div id="chat-log"></div>
-        <form class="chat-form" id="chat-form">
-          <textarea id="chat-input" placeholder="Ask about this note…" aria-label="Message to the assistant"></textarea>
-          <div class="row">
-            <button class="btn" type="button" id="chat-stop" hidden>Stop</button>
-            <button class="btn primary" type="submit" id="chat-send">Send</button>
-          </div>
-        </form>
-      </div>
-    </aside>
-  </div>
+    </article>
+    <div class="drop-hint" id="drop-hint" hidden>Drop a .txt, .md, .html or .docx file to open it</div>
+  </main>
 
-  <section class="howto" aria-labelledby="how-h">
-    <h2 id="how-h">How your notes are kept</h2>
-    <div class="how-grid">
-      <div class="how"><h3>Writing as a guest</h3><p>No sign-up. Notes save in this browser while you type. Clearing this browser's cookies and site data removes them.</p></div>
-      <div class="how"><h3>Your free account</h3><p>Create an account with your email and a password. Your notes are private to you and available on every device. Guest notes in this browser move over automatically.</p></div>
-      <div class="how"><h3>Sharing by link</h3><p>Turn on link sharing for any account note. Anyone with the link can read it. Turn it off and the link stops working.</p></div>
-      <div class="how"><h3>Formats in and out</h3><p>Plain text, rich text, Markdown and task lists. Import .txt, .md, .html or .docx. Download as .txt, .md, .html or Word, or print to PDF.</p></div>
+  <aside class="assistant" id="assistant" hidden aria-label="Writing assistant">
+    <div class="assist-head"><h2>Assistant</h2><button class="icon-btn" id="assist-close" type="button" aria-label="Close assistant"><svg class="i"><use href="#i-x"/></svg></button></div>
+    <div class="assist-body">
+      <p class="assist-about" id="chat-about">The assistant reads the open note and answers questions about it.</p>
+      <div class="chips" id="chat-chips">
+        <button type="button">Summarize this note</button>
+        <button type="button">Suggest a better title</button>
+        <button type="button">Proofread it</button>
+        <button type="button">List the next steps</button>
+      </div>
+      <div id="chat-log" class="chat-log"></div>
     </div>
-  </section>
-</main>
-<footer class="foot">
-  <span><span data-brand>Quillnote</span> · Ctrl+S saves · notes autosave a moment after you stop typing</span>
-  <a href="privacy.html">Privacy</a>
+    <form class="assist-form" id="chat-form">
+      <textarea id="chat-input" placeholder="Ask about this note…" aria-label="Message to the assistant"></textarea>
+      <div class="row"><button class="btn btn-sm" type="button" id="chat-stop" hidden>Stop</button><button class="btn btn-primary btn-sm" type="submit" id="chat-send">Send</button></div>
+    </form>
+  </aside>
+</div>
+
+<section class="story" aria-labelledby="story-h">
+  <div class="story-inner">
+    <div class="story-hero">
+      <h2 id="story-h">Write first. Everything else can wait.</h2>
+      <p>Quillnote opens straight to a blank page. It keeps every word as you type, works without a connection, and turns any note into a link only the right people can open.</p>
+      <button class="btn btn-primary" type="button" id="story-start">Start a new note</button>
+    </div>
+
+    <div class="feature-grid">
+      <div class="feature"><svg class="i"><use href="#i-checkcircle"/></svg><h3>Saved as you type</h3><p>Every change is kept a moment after you pause. Close the tab mid-sentence and it's still there.</p></div>
+      <div class="feature"><svg class="i"><use href="#i-template"/></svg><h3>Four ways to write</h3><p>Plain text, rich text, Markdown with a live side-by-side preview, and checklists that track your progress.</p></div>
+      <div class="feature"><svg class="i"><use href="#i-lock"/></svg><h3>Share on your terms</h3><p>Turn any note into a read-only link. Lock it with a password, or set it to stop working after an hour, a day or a month.</p></div>
+      <div class="feature"><svg class="i"><use href="#i-cloud"/></svg><h3>On every device</h3><p>Write without an account, then add one in seconds. Notes you wrote as a guest come with you automatically.</p></div>
+      <div class="feature"><svg class="i"><use href="#i-keyboard"/></svg><h3>Made for the keyboard</h3><p>Open any note or action from one command menu. Focus mode hides everything except your words.</p></div>
+      <div class="feature"><svg class="i"><use href="#i-offline"/></svg><h3>Works offline</h3><p>Install it like an app on your phone or computer. It opens instantly and keeps working when the connection drops.</p></div>
+    </div>
+
+    <div class="steps-wrap">
+      <h2>From thought to shared link in three steps</h2>
+      <ol class="steps">
+        <li><h3>Write</h3><p>Type a title and start. Pick plain text, rich text, Markdown, a checklist or a ready-made template.</p></li>
+        <li><h3>Keep it</h3><p>Notes stay in this browser. Create a free account with an email and password to sync them everywhere.</p></li>
+        <li><h3>Share</h3><p>Press Share, switch on the link, and send it. Add a password or an expiry if the note is sensitive.</p></li>
+      </ol>
+    </div>
+
+    <div class="pricing" id="pricing">
+      <h2>Pricing</h2>
+      <div class="plan">
+        <div class="plan-head">
+          <h3>Free</h3>
+          <p class="plan-price"><span>$0</span> no card, no trial, no time limit</p>
+        </div>
+        <ul class="plan-list">
+          <li><svg class="i"><use href="#i-check"/></svg>Unlimited notes on this device, no sign-up</li>
+          <li><svg class="i"><use href="#i-check"/></svg>Free account that syncs across devices</li>
+          <li><svg class="i"><use href="#i-check"/></svg>Plain text, rich text, Markdown and checklists</li>
+          <li><svg class="i"><use href="#i-check"/></svg>Share links with optional password and expiry</li>
+          <li><svg class="i"><use href="#i-check"/></svg>Download as text, Markdown, Word or PDF</li>
+          <li><svg class="i"><use href="#i-check"/></svg>Installable app that works offline</li>
+        </ul>
+        <button class="btn btn-primary" type="button" id="plan-start">Start writing</button>
+      </div>
+    </div>
+
+    <div class="faq">
+      <h2>Questions</h2>
+      <details><summary>Is Quillnote free?</summary><p>Yes. Writing, saving, accounts and sharing are all free.</p></details>
+      <details><summary>Do I need an account?</summary><p>No. Without one, notes are kept in this browser on this device. An account keeps them safe if you clear your browser and lets you open them anywhere.</p></details>
+      <details><summary>Who can read my notes?</summary><p>Only you. Account notes are protected in the database so each person can reach only their own. A note becomes readable by others only when you turn on its share link.</p></details>
+      <details><summary>How do password-protected links work?</summary><p>When you add a password to a shared note, the password is scrambled before it's stored, and readers must type it before the note's contents are sent to them. Turn the link off at any time and it stops working straight away.</p></details>
+      <details><summary>What happens if I forget my password?</summary><p>Quillnote doesn't send emails, so passwords can't be reset by email. Keep yours somewhere safe, such as a password manager.</p></details>
+      <details><summary>Can I use it offline?</summary><p>Yes. Once you've opened Quillnote, it loads without a connection. Guest notes save normally; account notes are held on your device and sent as soon as you're back online.</p></details>
+      <details><summary>Can I get my notes out?</summary><p>Any note downloads as plain text, Markdown, a Word document or a web page, or prints to PDF.</p></details>
+      <details><summary>How do I delete my account?</summary><p>Open the account menu at the top right and choose Delete account. Your account and every note in it are removed for good.</p></details>
+    </div>
+
+    <div class="cta">
+      <h2>Your next idea deserves a better home.</h2>
+      <p>No download. No sign-up. Just a page that's ready when you are.</p>
+      <button class="btn btn-primary" type="button" id="cta-start">Start writing now</button>
+    </div>
+  </div>
+</section>
+
+<footer class="site-foot">
+  <div class="site-foot-inner">
+    <span>© <span id="year"></span> <span data-brand>Quillnote</span></span>
+    <nav aria-label="Footer">
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="#" id="foot-keys">Keyboard shortcuts</a>
+      <a href="#" id="foot-report" hidden>Report abuse</a>
+    </nav>
+  </div>
 </footer>
+
+<!-- dialogs -->
+<dialog id="share-dlg" aria-labelledby="share-h"><div class="dlg" id="share-body"></div></dialog>
+
+<dialog id="auth-dlg" aria-labelledby="auth-h">
+  <form class="dlg" id="auth-form" novalidate>
+    <div class="dlg-head"><h2 id="auth-h">Create a free account</h2><button class="icon-btn" type="button" data-close aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+    <div class="segmented auth-tabs" id="auth-tabs" role="tablist" aria-label="Account">
+      <button type="button" role="tab" data-mode="signup" aria-selected="true">Create account</button>
+      <button type="button" role="tab" data-mode="signin" aria-selected="false">Sign in</button>
+    </div>
+    <p class="dlg-sub" id="auth-sub"></p>
+    <label class="field" id="email-wrap"><span>Email</span><input id="auth-email" type="email" autocomplete="email" placeholder="you@example.com"></label>
+    <label class="field" id="password-wrap"><span>Password</span><input id="auth-password" type="password" autocomplete="new-password" minlength="8"></label>
+    <label class="field" id="confirm-wrap"><span>Confirm password</span><input id="auth-confirm" type="password" autocomplete="new-password" minlength="8"></label>
+    <label class="show-pw" id="show-wrap"><input type="checkbox" id="auth-show"> Show password</label>
+    <p class="dlg-msg" id="auth-msg" role="status"></p>
+    <div class="dlg-actions">
+      <button class="btn btn-primary" type="submit" id="auth-submit">Create account</button>
+      <button class="btn btn-plain" type="button" id="auth-forgot">Forgot password?</button>
+      <button class="btn btn-plain" type="button" id="auth-back">Back to sign in</button>
+    </div>
+    <div id="google-wrap" hidden><button class="btn btn-block" type="button" id="btn-google">Continue with Google</button></div>
+  </form>
+</dialog>
+
+<dialog id="link-dlg" aria-labelledby="link-h">
+  <form class="dlg" id="link-form">
+    <div class="dlg-head"><h2 id="link-h">Add a link</h2><button class="icon-btn" type="button" data-close aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+    <label class="field"><span>Web address</span><input id="link-url" type="text" inputmode="url" placeholder="https://example.com" autocomplete="off"></label>
+    <p class="dlg-msg" id="link-msg" role="status"></p>
+    <div class="dlg-actions"><button class="btn btn-primary" type="submit">Add link</button><button class="btn" type="button" data-close>Cancel</button></div>
+  </form>
+</dialog>
+
+<dialog id="delete-dlg" aria-labelledby="del-h">
+  <form class="dlg" id="del-form">
+    <div class="dlg-head"><h2 id="del-h">Delete your account?</h2><button class="icon-btn" type="button" data-close aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+    <p class="dlg-sub">This permanently deletes <strong id="del-email"></strong> and every note in it, including shared links. It can't be undone. Download any notes you want to keep first.</p>
+    <label class="field"><span>Type DELETE to confirm</span><input id="del-confirm" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>
+    <p class="dlg-msg" id="del-msg" role="status"></p>
+    <div class="dlg-actions"><button class="btn btn-danger-solid" type="submit" id="del-submit">Delete account</button><button class="btn" type="button" data-close>Cancel</button></div>
+  </form>
+</dialog>
+
+<dialog id="keys-dlg" aria-labelledby="keys-h">
+  <div class="dlg">
+    <div class="dlg-head"><h2 id="keys-h">Keyboard shortcuts</h2><button class="icon-btn" type="button" data-close aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+    <div class="keys" id="keys-list"></div>
+  </div>
+</dialog>
+
+<dialog id="palette" aria-label="Command menu">
+  <div class="pal-input"><svg class="i"><use href="#i-search"/></svg><input id="pal-q" type="text" placeholder="Search notes or type a command" autocomplete="off" aria-controls="pal-list" aria-activedescendant=""></div>
+  <ul class="pal-list" id="pal-list" role="listbox"></ul>
+  <div class="pal-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> to move</span><span><kbd>Enter</kbd> to open</span><span><kbd>Esc</kbd> to close</span></div>
+</dialog>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<input type="file" id="file-import" accept=".txt,.md,.markdown,.html,.htm,.docx" hidden>
 <div id="print-area" aria-hidden="true"></div>
-<noscript><p style="padding:16px">This notepad needs JavaScript to run.</p></noscript>
+<noscript><p class="noscript">Quillnote needs JavaScript to run.</p></noscript>
 </body>
 </html>

@@ -99,3 +99,120 @@ $$;
 revoke all on function public.bump_ai_usage(integer) from public;
 revoke execute on function public.bump_ai_usage(integer) from anon; -- Supabase grants anon by default
 grant execute on function public.bump_ai_usage(integer) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- v2: pinned notes, expiring share links, password-protected share links.
+-- ---------------------------------------------------------------------------
+alter table public.notes add column if not exists pinned boolean not null default false;
+alter table public.notes add column if not exists share_expires_at timestamptz;
+alter table public.notes add column if not exists share_password_hash text;
+
+create extension if not exists pgcrypto with schema extensions;
+
+-- Owner changes how a note is shared. The password is hashed here and never stored in plain text.
+-- p_password: null keeps the current password, a value sets a new one; p_clear_password removes it.
+create or replace function public.set_note_sharing(
+  p_note_id uuid,
+  p_public boolean,
+  p_expires_at timestamptz default null,
+  p_password text default null,
+  p_clear_password boolean default false
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+begin
+  if auth.uid() is null then
+    return false;
+  end if;
+  if p_password is not null and char_length(p_password) not between 4 and 128 then
+    raise exception 'Share passwords must be 4 to 128 characters';
+  end if;
+  update public.notes x set
+    is_public = p_public,
+    share_expires_at = case when p_public then p_expires_at else null end,
+    share_password_hash = case
+      when not p_public or p_clear_password then null
+      when p_password is not null then extensions.crypt(p_password, extensions.gen_salt('bf', 10))
+      else x.share_password_hash
+    end
+  where x.id = p_note_id and x.user_id = auth.uid();
+  return found;
+end;
+$$;
+
+revoke all on function public.set_note_sharing(uuid, boolean, timestamptz, text, boolean) from public;
+revoke execute on function public.set_note_sharing(uuid, boolean, timestamptz, text, boolean) from anon;
+grant execute on function public.set_note_sharing(uuid, boolean, timestamptz, text, boolean) to authenticated;
+
+-- Anyone with the link opens a shared note. Expired links return nothing.
+-- Password-protected notes return only locked = true until the right password is given.
+create or replace function public.open_shared_note(p_note_id uuid, p_password text default null)
+returns table (id uuid, title text, type text, body text, tasks jsonb, updated_at timestamptz, locked boolean)
+language plpgsql
+stable
+security definer
+set search_path = public, extensions
+as $$
+declare
+  n public.notes%rowtype;
+begin
+  select * into n from public.notes x
+  where x.id = p_note_id
+    and x.is_public
+    and (x.share_expires_at is null or x.share_expires_at > now());
+  if not found then
+    return;
+  end if;
+  if n.share_password_hash is not null
+     and (p_password is null or extensions.crypt(p_password, n.share_password_hash) <> n.share_password_hash) then
+    return query select n.id, null::text, null::text, null::text, null::jsonb, null::timestamptz, true;
+    return;
+  end if;
+  return query select n.id, n.title, n.type, n.body, n.tasks, n.updated_at, false;
+end;
+$$;
+
+revoke all on function public.open_shared_note(uuid, text) from public;
+grant execute on function public.open_shared_note(uuid, text) to anon, authenticated;
+
+-- Lets a signed-in person permanently delete their own account (privacy-law right to erasure).
+-- notes and ai_usage reference auth.users with ON DELETE CASCADE, so their rows go too.
+create or replace function public.delete_my_account()
+returns boolean
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  uid uuid := auth.uid();
+begin
+  if uid is null then
+    return false;
+  end if;
+  delete from auth.users where id = uid;
+  return found;
+end;
+$$;
+
+revoke all on function public.delete_my_account() from public;
+revoke execute on function public.delete_my_account() from anon;
+grant execute on function public.delete_my_account() to authenticated;
+
+-- v1 share function kept for older deployed copies: respects expiry and never reveals locked notes.
+create or replace function public.get_shared_note(note_id uuid)
+returns table (id uuid, title text, type text, body text, tasks jsonb, updated_at timestamptz)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select n.id, n.title, n.type, n.body, n.tasks, n.updated_at
+  from public.notes n
+  where n.id = note_id
+    and n.is_public
+    and (n.share_expires_at is null or n.share_expires_at > now())
+    and n.share_password_hash is null;
+$$;

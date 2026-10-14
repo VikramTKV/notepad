@@ -2,14 +2,28 @@
 
 A free online notepad. Anyone can write without signing up. Guest notes save in the browser. A free account (Supabase Auth, email + password) keeps notes in the database, moves guest notes in automatically, and lets people share any note by link.
 
-**Features:** plain text, rich text, Markdown with preview, task lists · autosave · search and sort · import .txt/.md/.html/.docx · download .txt/.md/.html/Word, print to PDF · read-only share links · optional writing assistant (Claude) for signed-in users.
+**Features:**
+- Plain text, rich text, Markdown with a live split preview, and checklists, plus starter templates.
+- Autosave, pinned notes, filters (all, pinned, shared), search and sort.
+- Duplicate notes, undo after deleting, and focus mode.
+- Font and size choice: sans, serif or mono.
+- A command menu (Ctrl/⌘ K) and keyboard shortcuts.
+- Drag-and-drop import of .txt, .md, .html and .docx files. Download as .txt, .md, .html or Word, or print to PDF.
+- Read-only share links with an optional password and expiry.
+- Accounts with email and password and no emails sent, with **Delete account**.
+- Changes made offline are kept and synced later. The site installs as an app (PWA).
+- An optional writing assistant (Claude) for signed-in users.
+
+**Privacy and security:** the fonts (Inter, SIL OFL) and all libraries are self-hosted in `site/vendor` and `site/assets/fonts`, so loading the page contacts no third party. A strict Content Security Policy allows scripts and styles only from the site itself. Licences for bundled code are in `site/vendor/THIRD_PARTY_NOTICES.txt`.
 
 ```
 site/                       the website (static files, deployed to GitHub Pages)
-  index.html
-  config.js                 <- your Supabase URL + anon key go here
-  privacy.html
-  assets/app.js, styles.css, favicon.svg
+  index.html                app + product page
+  config.js                 <- Supabase URL + anon key, brand, contact, legal details
+  privacy.html, terms.html  legal pages (filled from config.js)
+  manifest.webmanifest, sw.js   installable app + offline support
+  assets/                   app.js, styles.css, theme.js, legal.js, icons, fonts/
+  vendor/                   self-hosted libraries + THIRD_PARTY_NOTICES.txt
 supabase/
   schema.sql                tables, Row Level Security, share + usage functions
   functions/ask/index.ts    Edge Function for the assistant (optional)
@@ -89,12 +103,18 @@ python -m http.server 8080 --directory site
 
 Open http://localhost:8080/. Without Supabase keys in `config.js` the site runs in guest-only mode.
 
+## Changing the Supabase project or brand
+
+- **Supabase address:** it appears in two places, `site/config.js` and the Content-Security-Policy `connect-src` in `site/index.html`. Update both, or the site can't reach the database.
+- **Brand name:** set `brandName` in `config.js`. Also update the `<title>` and description tags in the three HTML files and `name` in `manifest.webmanifest`, which browsers read before any script runs.
+
 ## Launch checklist
 
 - [ ] `schema.sql` run in the notepad project
 - [ ] `config.js` has the project URL and anon key (never the service_role key)
 - [ ] Site URL and Redirect URLs set in Supabase Auth
 - [ ] Decide on password recovery: keep it email-free (set `contactEmail` for locked-out people), or connect SMTP and set `passwordResetEmails: true`
-- [ ] `contactEmail` set in `config.js` (used for abuse reports and the privacy page)
-- [ ] `privacy.html` reviewed for your situation; add terms of service if you need them
+- [ ] `contactEmail`, `operatorName` and `governingLaw` set in `config.js` (they feed the abuse-report link, Privacy and Terms)
+- [ ] Privacy and Terms reviewed by a lawyer for your country (they're a plain-language starting point)
+- [ ] Brand name cleared: search your country's trademark register, plus WIPO's Global Brand Database, for note-taking or software marks
 - [ ] Assistant: `ANTHROPIC_API_KEY` secret set, function deployed, `aiEnabled: true`, spend limit set in the Claude Console

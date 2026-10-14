@@ -3,55 +3,74 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Privacy · Quillnote</title>
+<meta name="description" content="What Quillnote stores, where it's kept, and how to delete it.">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Source+Sans+3:wght@400;600;700&display=swap">
+<script src="assets/theme.js"></script>
 <link rel="stylesheet" href="assets/styles.css">
-<style>
-  .doc { max-width: 72ch; margin: 0 auto; padding-inline: var(--gutter); padding-block: 28px 48px; display: grid; gap: 14px; }
-  .doc h1 { font-size: 1.8rem; }
-  .doc h2 { font-size: 1.15rem; margin-top: 10px; }
-  .doc p, .doc ul { margin: 0; }
-</style>
+<script src="config.js"></script>
+<script src="assets/legal.js" defer></script>
+<!-- Plain-language starting point written for how this site actually works. Have it reviewed by a lawyer before launch. -->
 </head>
-<body>
-<header class="bar">
-  <a class="brand" href="./"><img src="assets/favicon.svg" alt="" width="30" height="30"><span class="brand-name">Quillnote</span></a>
+<body class="legal-page">
+<header class="topbar topbar-simple">
+  <a class="brand" href="./"><img src="assets/favicon.svg" alt="" width="26" height="26"><span data-brand>Quillnote</span></a>
+  <a class="btn btn-primary btn-sm" href="./">Open the notepad</a>
 </header>
-<main class="doc">
+<main class="legal">
   <h1>Privacy</h1>
-  <p class="muted small">Last updated: October 2026. Review this page before launch and adjust it to match how you run the service.</p>
+  <p class="legal-date">Last updated 15 October 2026</p>
+  <p class="legal-lead"><span data-brand>Quillnote</span> is run by <span data-operator></span>. We collect as little as we can: no ads, no analytics, no tracking cookies, and no emails.</p>
 
-  <h2>Guest notes</h2>
-  <p>Without an account, notes are stored only in your browser's local storage on your device. They are not sent to our servers. Clearing your browser's site data deletes them.</p>
+  <h2>Notes you write without an account</h2>
+  <p>Guest notes are stored only in your browser's local storage on your device. They are never sent to us. Clearing your browser's site data deletes them, and we can't recover them.</p>
 
-  <h2>Account notes</h2>
-  <p>When you sign in, we store your email address and your notes in our database, hosted by Supabase. Notes are private to your account unless you turn on link sharing for a note. Anyone with a shared link can read that note until you turn sharing off or delete the note.</p>
-
-  <h2>The assistant</h2>
-  <p>If you use the assistant, the text of the open note and your messages are sent to Anthropic's Claude API to produce an answer. We keep a daily count of assistant messages per account to limit use. We don't store the conversation.</p>
-
-  <h2>What we don't do</h2>
+  <h2>If you create an account</h2>
+  <p>We store:</p>
   <ul>
-    <li>We don't sell your data or show ads based on your notes.</li>
-    <li>We don't read your private notes, except where required by law or to investigate a reported shared note.</li>
+    <li>your email address and a scrambled (hashed) form of your password, used only to sign you in;</li>
+    <li>your notes and their settings, such as whether a note is pinned or shared;</li>
+    <li>for shared notes, the link's expiry time and, if you set one, a hashed form of the share password. The share password itself is never stored.</li>
   </ul>
+  <p>This data is held by our database provider, Supabase, in its Sydney, Australia region. Each person can only reach their own notes; this is enforced by the database itself, not just by the website.</p>
+  <p>We don't send any emails, so we don't use your address for newsletters or marketing.</p>
 
-  <h2>Deleting your data</h2>
-  <p>Delete any note from your notes list at any time. To delete your account and everything in it, contact us at the address below.</p>
+  <h2>Shared links</h2>
+  <p>When you turn on sharing for a note, anyone with its link can read that note until you turn sharing off, the link expires, or you delete the note. Treat a share link like the note itself. Shared notes show only the note's title and contents, never your email address.</p>
+
+  <h2>The writing assistant</h2>
+  <p>If the assistant is switched on and you use it, the text of the open note and your messages are sent to Anthropic's Claude service to produce an answer. We keep a daily count of assistant messages per account to limit use. We don't store the conversation.</p>
+
+  <h2>Website hosting</h2>
+  <p>The website is served by GitHub Pages. Like any web host, GitHub may record technical details such as IP addresses to keep its service secure; see GitHub's own privacy statement. Our fonts and code are hosted with the site itself, so loading the page doesn't contact any other company.</p>
+
+  <h2>What we keep in your browser</h2>
+  <p>Besides guest notes, your browser keeps your sign-in session and a few preferences: theme, text style, sort order, whether the notes list is shown, and any account changes waiting to sync while you're offline. These are needed for the site to work and are never used to track you.</p>
+
+  <h2>How long we keep data, and your choices</h2>
+  <ul>
+    <li><strong>See or take your data:</strong> every note can be downloaded from its ⋯ menu.</li>
+    <li><strong>Correct it:</strong> edit any note at any time.</li>
+    <li><strong>Delete it:</strong> delete single notes, or choose <em>Delete account</em> in the account menu to permanently remove your account and every note in it.</li>
+  </ul>
+  <p>We keep account data until you delete it. Depending on where you live, you may have further rights, such as to object or to complain to a data protection authority.</p>
+
+  <h2>Children</h2>
+  <p><span data-brand>Quillnote</span> isn't meant for children under 13, and we don't knowingly collect their data.</p>
+
+  <h2>Changes</h2>
+  <p>If we change how we handle data, we'll update this page and the date at the top.</p>
 
   <h2>Contact</h2>
-  <p id="contact">Contact details will appear here once they're set in config.js.</p>
+  <p data-contact>Contact details will appear here soon.</p>
 </main>
-<script src="config.js"></script>
-<script>
-  (function () {
-    var c = window.QUILLNOTE_CONFIG || {};
-    var brand = c.brandName || "Quillnote";
-    document.title = "Privacy · " + brand;
-    document.querySelectorAll(".brand-name").forEach(function (el) { el.textContent = brand; });
-    if (c.contactEmail) document.getElementById("contact").textContent = "Email " + c.contactEmail + ".";
-  })();
-</script>
+<footer class="site-foot">
+  <div class="site-foot-inner">
+    <span>© <span data-year></span> <span data-brand>Quillnote</span></span>
+    <nav aria-label="Footer"><a href="./">Notepad</a><a href="privacy.html" aria-current="page">Privacy</a><a href="terms.html">Terms</a></nav>
+  </div>
+</footer>
 </body>
 </html>
